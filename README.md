@@ -8,6 +8,6 @@ how to run:
 4. ./Harmonograph
 
 
-current stauys:
+current status:
 - animate the harmonograph with static values
 - [PENDING: todo on mon] integrate with dian's rotation + zooming, already done for windows ver
