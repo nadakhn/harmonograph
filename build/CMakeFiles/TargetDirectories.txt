@@ -1,5 +1,0 @@
-/Users/nadakhan/Desktop/2024 Desktop/term 6/graphics + viz/Project/Harmonograph/build/CMakeFiles/source_lib.dir
-/Users/nadakhan/Desktop/2024 Desktop/term 6/graphics + viz/Project/Harmonograph/build/CMakeFiles/GLAD.dir
-/Users/nadakhan/Desktop/2024 Desktop/term 6/graphics + viz/Project/Harmonograph/build/CMakeFiles/Harmonograph.dir
-/Users/nadakhan/Desktop/2024 Desktop/term 6/graphics + viz/Project/Harmonograph/build/CMakeFiles/edit_cache.dir
-/Users/nadakhan/Desktop/2024 Desktop/term 6/graphics + viz/Project/Harmonograph/build/CMakeFiles/rebuild_cache.dir
