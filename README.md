@@ -10,4 +10,6 @@ how to run:
 
 current status:
 - animate the harmonograph with static values
-- [PENDING: todo on mon] integrate with dian's rotation + zooming, already done for windows ver
+- included the shaders to allow for transformations (zoom, rotate)
+- [TODO] UI buttons for user inputs of harmonograph params
+- [TODO] extrusions ! 
