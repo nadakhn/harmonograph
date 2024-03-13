@@ -56,6 +56,30 @@ glm::mat4 modelMatrix = glm::mat4(1.0f);
 // Colour
 glm::vec3 meshColor;
 
+// Parameters
+
+float amplitude = 0.5f;
+float damping = 0.02f;
+float freq1 = 3.001f,
+        freq2 = 2.0f,
+        freq3 = 3.0f,
+        freq4 = 2.0f,
+        freq5 = 3.0f,
+        freq6 = 2.0f,
+        damping1 = 0.004f,
+        damping2 = 0.0065f,
+        damping3 = 0.008f,
+        damping4 = 0.019f,
+        damping5 = 0.012f,
+        damping6 = 0.005f,
+        phase1 = 0,
+        phase2 = 0,
+        phase3 = M_PI / 2,
+        phase4 = 3 * M_PI / 2,
+        phase5 = M_PI / 4,
+        phase6 = 2 * M_PI;
+
+
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
 ///=========================================================================================///
@@ -225,26 +249,26 @@ std::vector<float> drawHarmonograph(float animationTime)
     // Draw the harmonograph
     std::vector<float> vertices;
     float x, y, z, time;
-    const float amplitude = 0.5f;
-    const float damping = 0.02f;
-    const float freq1 = 3.001f,
-                freq2 = 2.0f,
-                freq3 = 3.0f,
-                freq4 = 2.0f,
-                freq5 = 3.0f,
-                freq6 = 2.0f,
-                damping1 = 0.004f,
-                damping2 = 0.0065f,
-                damping3 = 0.008f,
-                damping4 = 0.019f,
-                damping5 = 0.012f,
-                damping6 = 0.005f,
-                phase1 = 0,
-                phase2 = 0,
-                phase3 = M_PI / 2,
-                phase4 = 3 * M_PI / 2,
-                phase5 = M_PI / 4,
-                phase6 = 2 * M_PI;
+    // const float amplitude = 0.5f;
+    // const float damping = 0.02f;
+    // const float freq1 = 3.001f,
+    //             freq2 = 2.0f,
+    //             freq3 = 3.0f,
+    //             freq4 = 2.0f,
+    //             freq5 = 3.0f,
+    //             freq6 = 2.0f,
+    //             damping1 = 0.004f,
+    //             damping2 = 0.0065f,
+    //             damping3 = 0.008f,
+    //             damping4 = 0.019f,
+    //             damping5 = 0.012f,
+    //             damping6 = 0.005f,
+    //             phase1 = 0,
+    //             phase2 = 0,
+    //             phase3 = M_PI / 2,
+    //             phase4 = 3 * M_PI / 2,
+    //             phase5 = M_PI / 4,
+    //             phase6 = 2 * M_PI;
 
     for (time = 0; time < animationTime; time += 0.01)
     {
@@ -426,9 +450,9 @@ int main(void)
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-#ifdef __EMSCRIPTEN__
+    #ifdef __EMSCRIPTEN__
     ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
-#endif
+    #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Loop until the user closes the window
@@ -442,8 +466,30 @@ int main(void)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::ShowDebugLogWindow();
+        ImGui::Begin("Harmonograph Controls");
 
+        ImGui::SliderFloat("Amplitude", &amplitude, 0.0f, 1.0f, "Amp: %.3f");
+        ImGui::SliderFloat("Damping 1", &damping1, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Damping 2", &damping2, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Damping 3", &damping3, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Damping 4", &damping4, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Damping 5", &damping5, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Damping 6", &damping6, 0.0f, 0.1f, "Damp: %.4f");
+        ImGui::SliderFloat("Frequency 1", &freq1, 0.0f, 10.0f, "Freq1: %.3f");
+        ImGui::SliderFloat("Frequency 2", &freq2, 0.0f, 10.0f, "Freq2: %.3f");
+        ImGui::SliderFloat("Frequency 3", &freq3, 0.0f, 10.0f, "Freq3: %.3f");
+        ImGui::SliderFloat("Frequency 4", &freq4, 0.0f, 10.0f, "Freq4: %.3f");
+        ImGui::SliderFloat("Frequency 5", &freq5, 0.0f, 10.0f, "Freq5: %.3f");
+        ImGui::SliderFloat("Frequency 6", &freq6, 0.0f, 10.0f, "Freq6: %.3f");
+        ImGui::SliderFloat("Phase 1", &phase1, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Phase 2", &phase2, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Phase 3", &phase3, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Phase 4", &phase4, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Phase 5", &phase5, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Phase 6", &phase6, 0.0f, 10.0f, "Phase: %.4f");
+
+        ImGui::End();
+        
         // Render OpenGL here
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -470,6 +516,11 @@ int main(void)
 
         // Poll for and process events
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
 
     // Deallocate all resources
     glDeleteVertexArrays(1, &VAO);

@@ -1,7 +1,7 @@
-/home/ryan/term6/graphics/project/harmonograph/CMakeFiles/GLAD.dir
-/home/ryan/term6/graphics/project/harmonograph/CMakeFiles/Harmonograph.dir
-/home/ryan/term6/graphics/project/harmonograph/CMakeFiles/edit_cache.dir
-/home/ryan/term6/graphics/project/harmonograph/CMakeFiles/rebuild_cache.dir
-/home/ryan/term6/graphics/project/harmonograph/imgui/CMakeFiles/imgui.dir
-/home/ryan/term6/graphics/project/harmonograph/imgui/CMakeFiles/edit_cache.dir
-/home/ryan/term6/graphics/project/harmonograph/imgui/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/CMakeFiles/GLAD.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/CMakeFiles/Harmonograph.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/imgui/CMakeFiles/imgui.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/imgui/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/imgui/CMakeFiles/rebuild_cache.dir

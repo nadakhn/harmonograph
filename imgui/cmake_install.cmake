@@ -1,4 +1,4 @@
-# Install script for directory: /home/ryan/term6/graphics/project/harmonograph/imgui
+# Install script for directory: /mnt/c/Users/Reynard simano/Documents/GitHub/harmonograph/imgui
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
