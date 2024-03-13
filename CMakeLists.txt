@@ -17,6 +17,8 @@ file( GLOB SRCFILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
+add_subdirectory(imgui)
+
 add_library(GLAD "src/glad.c")
 set(LIBS ${LIBS} GLAD)
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -24,3 +26,4 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(Harmonograph src/main.cpp)
 target_link_libraries(Harmonograph ${LIBS})
 target_link_libraries(Harmonograph ${GLFW3_LIBRARY})
+target_link_libraries(Harmonograph imgui)

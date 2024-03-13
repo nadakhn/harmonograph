@@ -8,8 +8,10 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-// #include "shader.h" 
+// #include "shader.h"
 #include "shaderSource.h"
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 
 using namespace std;
 
@@ -295,7 +297,6 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-
     // Create a windowed mode window and its OpenGL context
     window = glfwCreateWindow(winWidth, winHeight, "Harmonograph", NULL, NULL);
 
@@ -324,7 +325,6 @@ int main(void)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
 
     // configure global opengl state
     // -----------------------------
@@ -408,12 +408,41 @@ int main(void)
     // shader stuff ends here
 
     float animationTime = 0.0f; // Initialize animation time
+    printf("%s\n", glGetString(GL_VERSION));
+
+    const char *glsl_version = "#version 130";
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+#ifdef __EMSCRIPTEN__
+    ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
+#endif
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
         // Process inputs
         processInput(window);
+        glfwPollEvents();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::ShowDebugLogWindow();
 
         // Render OpenGL here
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -430,6 +459,9 @@ int main(void)
 
         std::vector<float> vertices = drawHarmonograph(animationTime);
 
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         // Increment animation time
         animationTime += 0.01f;
 
@@ -437,7 +469,6 @@ int main(void)
         glfwSwapBuffers(window);
 
         // Poll for and process events
-        glfwPollEvents();
     }
 
     // Deallocate all resources
