@@ -61,24 +61,23 @@ glm::vec3 meshColor;
 float amplitude = 0.5f;
 float damping = 0.02f;
 float freq1 = 3.001f,
-        freq2 = 2.0f,
-        freq3 = 3.0f,
-        freq4 = 2.0f,
-        freq5 = 3.0f,
-        freq6 = 2.0f,
-        damping1 = 0.004f,
-        damping2 = 0.0065f,
-        damping3 = 0.008f,
-        damping4 = 0.019f,
-        damping5 = 0.012f,
-        damping6 = 0.005f,
-        phase1 = 0,
-        phase2 = 0,
-        phase3 = M_PI / 2,
-        phase4 = 3 * M_PI / 2,
-        phase5 = M_PI / 4,
-        phase6 = 2 * M_PI;
-
+      freq2 = 2.0f,
+      freq3 = 3.0f,
+      freq4 = 2.0f,
+      freq5 = 3.0f,
+      freq6 = 2.0f,
+      damping1 = 0.004f,
+      damping2 = 0.0065f,
+      damping3 = 0.008f,
+      damping4 = 0.019f,
+      damping5 = 0.012f,
+      damping6 = 0.005f,
+      phase1 = 0,
+      phase2 = 0,
+      phase3 = M_PI / 2,
+      phase4 = 3 * M_PI / 2,
+      phase5 = M_PI / 4,
+      phase6 = 2 * M_PI;
 
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
@@ -434,7 +433,7 @@ int main(void)
     float animationTime = 0.0f; // Initialize animation time
     printf("%s\n", glGetString(GL_VERSION));
 
-    const char *glsl_version = "#version 130";
+    const char *glsl_version = "#version 330";
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -450,9 +449,9 @@ int main(void)
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    #ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__
     ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
-    #endif
+#endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Loop until the user closes the window
@@ -489,8 +488,9 @@ int main(void)
         ImGui::SliderFloat("Phase 6", &phase6, 0.0f, 10.0f, "Phase: %.4f");
 
         ImGui::End();
-        
+
         // Render OpenGL here
+        glClearColor(0.95f, 0.95f, 0.95f, 1.0f ); //change background colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Set up the viewing transformation
@@ -520,7 +520,6 @@ int main(void)
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
 
     // Deallocate all resources
     glDeleteVertexArrays(1, &VAO);

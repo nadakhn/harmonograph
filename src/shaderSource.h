@@ -30,7 +30,7 @@ const char *fragmentShaderSource =
         "in vec3 oColor;\n"
         "void main()\n"
         "{\n"
-        "FragColor = vec4(oColor, 1.0f);\n"
+        "FragColor = vec4(0.0f, 0.0f, 0.0f, 1.0f);\n" //change line colour
         "}\n\0";
 
 
