@@ -1,1 +1,0 @@
-/usr/bin/c++ -std=c++11 -rdynamic CMakeFiles/Harmonograph.dir/src/main.cpp.o -o Harmonograph  -lglfw libGLAD.a -lglfw imgui/libimgui.a 
