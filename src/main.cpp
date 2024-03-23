@@ -77,7 +77,8 @@ float freq1 = 3.001f,
       phase3 = M_PI / 2,
       phase4 = 3 * M_PI / 2,
       phase5 = M_PI / 4,
-      phase6 = 2 * M_PI;
+      phase6 = 2 * M_PI,
+      animationIncrement = 0.01f;
 
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
@@ -155,6 +156,11 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 // ---------------------------------------------------------
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
+    auto &io = ImGui::GetIO();
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+    {
+        return;
+    }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
         leftMouseButtonHold = true;
@@ -486,11 +492,14 @@ int main(void)
         ImGui::SliderFloat("Phase 4", &phase4, 0.0f, 10.0f, "Phase: %.4f");
         ImGui::SliderFloat("Phase 5", &phase5, 0.0f, 10.0f, "Phase: %.4f");
         ImGui::SliderFloat("Phase 6", &phase6, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Speed", &animationIncrement, 0.0f, 1.0f, "Speed: %.4f");
+
+        ImGui::ShowDemoWindow();
 
         ImGui::End();
 
         // Render OpenGL here
-        glClearColor(0.95f, 0.95f, 0.95f, 1.0f ); //change background colour
+        glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Set up the viewing transformation
@@ -509,7 +518,7 @@ int main(void)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Increment animation time
-        animationTime += 0.01f;
+        animationTime += animationIncrement;
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
