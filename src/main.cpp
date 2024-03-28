@@ -56,8 +56,11 @@ glm::mat4 modelMatrix = glm::mat4(1.0f);
 // Colour
 glm::vec3 meshColor;
 
-// Parameters
+// Animation Control
+bool isAnimating = true;
+float animationTime = 0.0f;
 
+// Parameters
 float amplitude = 0.5f;
 float damping = 0.02f;
 float freq1 = 3.001f,
@@ -137,6 +140,15 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // Stop animation when 'e' is pressed
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        // Reset animation time
+        animationTime = 0.0f;
+        // Stop animation
+        isAnimating = false;
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -233,12 +245,43 @@ void cursor_pos_callback(GLFWwindow *window, double mouseX, double mouseY)
 }
 
 ///=========================================================================================///
+///                                  Vertex Normals + Surfaces
+///=========================================================================================///
+
+// Function to calculate normals for each vertex
+std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
+{
+    std::vector<glm::vec3> normals;
+    for (size_t i = 0; i < vertices.size(); i += 3)
+    {
+        // Calculate the direction from the current point to the next point
+        glm::vec3 currentPoint(vertices[i], vertices[i + 1], vertices[i + 2]);
+        glm::vec3 nextPoint;
+        if (i + 3 < vertices.size())
+        {
+            nextPoint = glm::vec3(vertices[i + 3], vertices[i + 4], vertices[i + 5]);
+        }
+        else
+        {
+            // If it's the last point, use the previous point as the next point
+            nextPoint = glm::vec3(vertices[i - 3], vertices[i - 2], vertices[i - 1]);
+        }
+        glm::vec3 direction = nextPoint - currentPoint;
+        // Normalize the direction to get the normal
+        glm::vec3 normal = glm::normalize(direction);
+        normals.push_back(normal);
+    }
+    return normals;
+}
+
+
+///=========================================================================================///
 ///                                      Harmonograph Function
 ///=========================================================================================///
 
-std::vector<float> drawHarmonograph(float animationTime)
+std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoints)
 {
-    // Buffers for harmonograph
+    // Buffers for harmonograph line segments
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -248,26 +291,6 @@ std::vector<float> drawHarmonograph(float animationTime)
     // Draw the harmonograph
     std::vector<float> vertices;
     float x, y, z, time;
-    // const float amplitude = 0.5f;
-    // const float damping = 0.02f;
-    // const float freq1 = 3.001f,
-    //             freq2 = 2.0f,
-    //             freq3 = 3.0f,
-    //             freq4 = 2.0f,
-    //             freq5 = 3.0f,
-    //             freq6 = 2.0f,
-    //             damping1 = 0.004f,
-    //             damping2 = 0.0065f,
-    //             damping3 = 0.008f,
-    //             damping4 = 0.019f,
-    //             damping5 = 0.012f,
-    //             damping6 = 0.005f,
-    //             phase1 = 0,
-    //             phase2 = 0,
-    //             phase3 = M_PI / 2,
-    //             phase4 = 3 * M_PI / 2,
-    //             phase5 = M_PI / 4,
-    //             phase6 = 2 * M_PI;
 
     for (time = 0; time < animationTime; time += 0.01)
     {
@@ -278,11 +301,7 @@ std::vector<float> drawHarmonograph(float animationTime)
         vertices.push_back(x);
         vertices.push_back(y);
         vertices.push_back(z);
-
-        // glVertex3f(x, y, z);
     }
-
-    glEnd();
 
     // Upload vertices data to GPU
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
@@ -291,8 +310,59 @@ std::vector<float> drawHarmonograph(float animationTime)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // Draw using VAO
+    // Draw line segments
     glDrawArrays(GL_LINE_STRIP, 0, vertices.size() / 3);
+
+    if (renderControlPoints){
+        // Render the control points
+        glPointSize(5.0f);  // Set point size for better visibility
+        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
+
+
+        std::vector<glm::vec3> controlPoints;
+        for (size_t i = 0; i < vertices.size(); i += 3)
+        {
+            controlPoints.push_back(glm::vec3(vertices[i], vertices[i + 1], vertices[i + 2]));
+        }
+
+        // Calculate + render normals
+        std::vector<glm::vec3> normals = calculateNormals(vertices);
+
+        //buffers for normals
+        unsigned int normalVBO, normalVAO;
+        glGenVertexArrays(1, &normalVAO);
+        glGenBuffers(1, &normalVBO);
+        glBindVertexArray(normalVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+
+        // Store normal vectors' data in VBO
+        glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+
+        // Set vertex attribute pointer for position
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Draw the normal vectors
+        // Calculate vertices for line segments (control points to normals)
+        std::vector<glm::vec3> lineSegments;
+        for (size_t i = 0; i < controlPoints.size(); ++i) {
+            lineSegments.push_back(controlPoints[i]);
+            lineSegments.push_back(controlPoints[i] + 1.0f * normals[i]);
+        }
+
+        // Store line segment vertices' data in VBO
+        glBufferData(GL_ARRAY_BUFFER, lineSegments.size() * sizeof(glm::vec3), &lineSegments[0], GL_STATIC_DRAW);
+
+        // Set vertex attribute pointer for line segment vertices
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // Draw the line segments
+        glDrawArrays(GL_LINES, 0, lineSegments.size());
+        // glDrawArrays(GL_POINTS, 0, normals.size()); //this draws out the normal end points
+
+    }
+        
 
     // Clean up
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -302,6 +372,7 @@ std::vector<float> drawHarmonograph(float animationTime)
 
     return vertices;
 }
+
 
 ///=========================================================================================///
 ///                                      Main Function
@@ -490,7 +561,7 @@ int main(void)
         ImGui::End();
 
         // Render OpenGL here
-        glClearColor(0.95f, 0.95f, 0.95f, 1.0f ); //change background colour
+        glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Set up the viewing transformation
@@ -503,13 +574,17 @@ int main(void)
         glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
-        std::vector<float> vertices = drawHarmonograph(animationTime);
+        std::vector<float> vertices = drawHarmonograph(animationTime,!isAnimating);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Increment animation time
-        animationTime += 0.01f;
+        // Only update animation if it's running
+        if (isAnimating)
+        {
+            // Increment animation time
+            animationTime += 0.01f;
+        }
 
         // Swap front and back buffers
         glfwSwapBuffers(window);
