@@ -63,24 +63,13 @@ float animationTime = 0.0f;
 // Parameters
 float amplitude = 0.5f;
 float damping = 0.02f;
-float freq1 = 3.001f,
-      freq2 = 2.0f,
-      freq3 = 3.0f,
-      freq4 = 2.0f,
-      freq5 = 3.0f,
-      freq6 = 2.0f,
-      damping1 = 0.004f,
-      damping2 = 0.0065f,
-      damping3 = 0.008f,
-      damping4 = 0.019f,
-      damping5 = 0.012f,
-      damping6 = 0.005f,
-      phase1 = 0,
-      phase2 = 0,
-      phase3 = M_PI / 2,
-      phase4 = 3 * M_PI / 2,
-      phase5 = M_PI / 4,
-      phase6 = 2 * M_PI;
+float animationIncrement = 0.01f;
+float *freqPtr1 = new float[3];
+float *freqPtr2 = new float[3];
+float *dampPtr1 = new float[3];
+float *dampPtr2 = new float[3];
+float *phasePtr1 = new float[3];
+float *phasePtr2 = new float[3];
 
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
@@ -167,6 +156,11 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 // ---------------------------------------------------------
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
+    auto &io = ImGui::GetIO();
+    if (io.WantCaptureMouse || io.WantCaptureKeyboard)
+    {
+        return;
+    }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
         leftMouseButtonHold = true;
@@ -294,9 +288,9 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
 
     for (time = 0; time < animationTime; time += 0.01)
     {
-        x = amplitude * sin(time * freq1 + phase1) * exp(-damping1 * time) + amplitude * sin(time * freq2 + phase2) * exp(-damping2 * time);
-        y = amplitude * sin(time * freq3 + phase3) * exp(-damping3 * time) + amplitude * sin(time * freq4 + phase4) * exp(-damping4 * time);
-        z = amplitude * sin(time * freq5 + phase5) * exp(-damping5 * time) + amplitude * sin(time * freq6 + phase6) * exp(-damping6 * time);
+        x = amplitude * sin(time * freqPtr1[0] + phasePtr1[0]) * exp(-dampPtr1[0] * time) + amplitude * sin(time * freqPtr1[1] + phasePtr1[1]) * exp(-dampPtr1[1] * time);
+        y = amplitude * sin(time * freqPtr1[2] + phasePtr1[2]) * exp(-dampPtr1[2] * time) + amplitude * sin(time * freqPtr2[0] + phasePtr2[0]) * exp(-dampPtr2[0] * time);
+        z = amplitude * sin(time * freqPtr2[1] + phasePtr2[1]) * exp(-dampPtr2[1] * time) + amplitude * sin(time * freqPtr2[2] + phasePtr1[2]) * exp(-dampPtr2[2] * time);
 
         vertices.push_back(x);
         vertices.push_back(y);
@@ -525,6 +519,33 @@ int main(void)
 #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    // Initializer Frequncy
+    freqPtr1[0] = 3.001f;
+    freqPtr1[1] = 2.0f;
+    freqPtr1[2] = 3.0f;
+
+    freqPtr2[0] = 2.0f;
+    freqPtr2[1] = 3.0f;
+    freqPtr2[2] = 2.0f;
+
+    dampPtr1[0] = 0.004f;
+    dampPtr1[1] = 0.0065f;
+    dampPtr1[2] = 0.008f;
+
+    dampPtr2[0] = 0.019f;
+    dampPtr2[1] = 0.012f;
+    dampPtr2[2] = 0.005f;
+
+    phasePtr1[0] = 0;
+    phasePtr1[1] = 0;
+    phasePtr1[2] = M_PI / 2;
+
+    phasePtr1[0] = 3 * M_PI / 2;
+    phasePtr1[1] = M_PI / 4;
+    phasePtr1[2] = 2 * M_PI;
+
+    int freeze = 1;
+
     // Loop until the user closes the window
     while (!glfwWindowShouldClose(window))
     {
@@ -535,32 +556,43 @@ int main(void)
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        static int clicked = 0;
         ImGui::Begin("Harmonograph Controls");
 
-        ImGui::SliderFloat("Amplitude", &amplitude, 0.0f, 1.0f, "Amp: %.3f");
-        ImGui::SliderFloat("Damping 1", &damping1, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Damping 2", &damping2, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Damping 3", &damping3, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Damping 4", &damping4, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Damping 5", &damping5, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Damping 6", &damping6, 0.0f, 0.1f, "Damp: %.4f");
-        ImGui::SliderFloat("Frequency 1", &freq1, 0.0f, 10.0f, "Freq1: %.3f");
-        ImGui::SliderFloat("Frequency 2", &freq2, 0.0f, 10.0f, "Freq2: %.3f");
-        ImGui::SliderFloat("Frequency 3", &freq3, 0.0f, 10.0f, "Freq3: %.3f");
-        ImGui::SliderFloat("Frequency 4", &freq4, 0.0f, 10.0f, "Freq4: %.3f");
-        ImGui::SliderFloat("Frequency 5", &freq5, 0.0f, 10.0f, "Freq5: %.3f");
-        ImGui::SliderFloat("Frequency 6", &freq6, 0.0f, 10.0f, "Freq6: %.3f");
-        ImGui::SliderFloat("Phase 1", &phase1, 0.0f, 10.0f, "Phase: %.4f");
-        ImGui::SliderFloat("Phase 2", &phase2, 0.0f, 10.0f, "Phase: %.4f");
-        ImGui::SliderFloat("Phase 3", &phase3, 0.0f, 10.0f, "Phase: %.4f");
-        ImGui::SliderFloat("Phase 4", &phase4, 0.0f, 10.0f, "Phase: %.4f");
-        ImGui::SliderFloat("Phase 5", &phase5, 0.0f, 10.0f, "Phase: %.4f");
-        ImGui::SliderFloat("Phase 6", &phase6, 0.0f, 10.0f, "Phase: %.4f");
+        ImGui::SliderFloat("Speed", &animationIncrement, 0.01f, 0.5f, "Speed: %.4f");
 
+        ImGui::SliderFloat("Amplitude", &amplitude, 0.01f, 5.0f, "Amplitude: %.4f");
+
+        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+
+        ImGui::DragFloat3("Damp Set 1", dampPtr1, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Damp Set 2", dampPtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+
+        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+
+        if (ImGui::Button("Freeze"))
+            freeze++;
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Reset"))
+        {
+            animationTime = 0;
+            freeze = 1;
+        }
+
+        ImGui::SameLine();
+        ImGui::Button("Preset 1");
+        ImGui::SameLine();
+        ImGui::Button("Preset 2");
+        ImGui::SameLine();
+        ImGui::Button("Preset 3");
         ImGui::End();
 
         // Render OpenGL here
+        glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -579,11 +611,9 @@ int main(void)
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        // Only update animation if it's running
-        if (isAnimating)
+        if (freeze & 1)
         {
-            // Increment animation time
-            animationTime += 0.01f;
+            animationTime += animationIncrement;
         }
 
         // Swap front and back buffers
