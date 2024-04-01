@@ -129,15 +129,6 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    // Stop animation when 'e' is pressed
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-    {
-        // Reset animation time
-        animationTime = 0.0f;
-        // Stop animation
-        isAnimating = false;
-    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -268,7 +259,6 @@ std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
     return normals;
 }
 
-
 ///=========================================================================================///
 ///                                      Harmonograph Function
 ///=========================================================================================///
@@ -307,11 +297,11 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
     // Draw line segments
     glDrawArrays(GL_LINE_STRIP, 0, vertices.size() / 3);
 
-    if (renderControlPoints){
+    if (renderControlPoints)
+    {
         // Render the control points
-        glPointSize(5.0f);  // Set point size for better visibility
+        glPointSize(5.0f); // Set point size for better visibility
         glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
-
 
         std::vector<glm::vec3> controlPoints;
         for (size_t i = 0; i < vertices.size(); i += 3)
@@ -322,7 +312,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
         // Calculate + render normals
         std::vector<glm::vec3> normals = calculateNormals(vertices);
 
-        //buffers for normals
+        // buffers for normals
         unsigned int normalVBO, normalVAO;
         glGenVertexArrays(1, &normalVAO);
         glGenBuffers(1, &normalVBO);
@@ -333,30 +323,29 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
         glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 
         // Set vertex attribute pointer for position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
         // Draw the normal vectors
         // Calculate vertices for line segments (control points to normals)
         std::vector<glm::vec3> lineSegments;
-        for (size_t i = 0; i < controlPoints.size(); ++i) {
+        for (size_t i = 0; i < controlPoints.size(); ++i)
+        {
             lineSegments.push_back(controlPoints[i]);
-            lineSegments.push_back(controlPoints[i] + 1.0f * normals[i]);
+            lineSegments.push_back(controlPoints[i] + 0.5f * normals[i]); // TODO: change the length of the normal in relation to the input amp
         }
 
         // Store line segment vertices' data in VBO
         glBufferData(GL_ARRAY_BUFFER, lineSegments.size() * sizeof(glm::vec3), &lineSegments[0], GL_STATIC_DRAW);
 
         // Set vertex attribute pointer for line segment vertices
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
         // Draw the line segments
         glDrawArrays(GL_LINES, 0, lineSegments.size());
         // glDrawArrays(GL_POINTS, 0, normals.size()); //this draws out the normal end points
-
     }
-        
 
     // Clean up
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -366,7 +355,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
 
     return vertices;
 }
-
 
 ///=========================================================================================///
 ///                                      Main Function
@@ -573,16 +561,17 @@ int main(void)
         ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f");
 
         if (ImGui::Button("Freeze"))
+        {
             freeze++;
-
+            isAnimating = !isAnimating;
+        }
         ImGui::SameLine();
-
         if (ImGui::Button("Reset"))
         {
             animationTime = 0;
             freeze = 1;
+            isAnimating = true;
         }
-
         ImGui::SameLine();
         ImGui::Button("Preset 1");
         ImGui::SameLine();
@@ -606,7 +595,7 @@ int main(void)
         glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
-        std::vector<float> vertices = drawHarmonograph(animationTime,!isAnimating);
+        std::vector<float> vertices = drawHarmonograph(animationTime, !isAnimating);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
