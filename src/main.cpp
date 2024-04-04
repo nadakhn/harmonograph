@@ -567,9 +567,9 @@ int main(void)
     phasePtr1[1] = 0;
     phasePtr1[2] = M_PI / 2;
 
-    phasePtr1[0] = 3 * M_PI / 2;
-    phasePtr1[1] = M_PI / 4;
-    phasePtr1[2] = 2 * M_PI;
+    phasePtr2[0] = 3 * M_PI / 2;
+    phasePtr2[1] = M_PI / 4;
+    phasePtr2[2] = 2 * M_PI;
 
     int freeze = 1;
 
