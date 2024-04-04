@@ -259,11 +259,22 @@ std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
     return normals;
 }
 
+void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm::vec3> &surfaceVertices)
+{
+    // Assuming lineSegments has at least two line segments
+    for (size_t i = 0; i < lineSegments.size() - 1; i += 2)
+    {
+        // Add vertices for rectangle formed by sequential pair of line segments
+        surfaceVertices.push_back(lineSegments[i]);
+        surfaceVertices.push_back(lineSegments[i + 1]);
+    }
+}
+
 ///=========================================================================================///
 ///                                      Harmonograph Function
 ///=========================================================================================///
 
-std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoints)
+std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
 {
     // Buffers for harmonograph line segments
     unsigned int VBO, VAO;
@@ -281,6 +292,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
         x = amplitude * sin(time * freqPtr1[0] + phasePtr1[0]) * exp(-dampPtr1[0] * time) + amplitude * sin(time * freqPtr1[1] + phasePtr1[1]) * exp(-dampPtr1[1] * time);
         y = amplitude * sin(time * freqPtr1[2] + phasePtr1[2]) * exp(-dampPtr1[2] * time) + amplitude * sin(time * freqPtr2[0] + phasePtr2[0]) * exp(-dampPtr2[0] * time);
         z = amplitude * sin(time * freqPtr2[1] + phasePtr2[1]) * exp(-dampPtr2[1] * time) + amplitude * sin(time * freqPtr2[2] + phasePtr1[2]) * exp(-dampPtr2[2] * time);
+        // z = time / 100; // nada TODO : temp to make the lines not intersect
 
         vertices.push_back(x);
         vertices.push_back(y);
@@ -297,12 +309,8 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
     // Draw line segments
     glDrawArrays(GL_LINE_STRIP, 0, vertices.size() / 3);
 
-    if (renderControlPoints)
+    if (renderSurface)
     {
-        // Render the control points
-        glPointSize(5.0f); // Set point size for better visibility
-        glDrawArrays(GL_POINTS, 0, vertices.size() / 3);
-
         std::vector<glm::vec3> controlPoints;
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
@@ -332,7 +340,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
         for (size_t i = 0; i < controlPoints.size(); ++i)
         {
             lineSegments.push_back(controlPoints[i]);
-            lineSegments.push_back(controlPoints[i] + 0.5f * normals[i]); // TODO: change the length of the normal in relation to the input amp
+            lineSegments.push_back(controlPoints[i] + 0.5f * normals[i]); // nada TODO: change the length of the normal in relation to the input amp
         }
 
         // Store line segment vertices' data in VBO
@@ -344,7 +352,38 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderControlPoint
 
         // Draw the line segments
         glDrawArrays(GL_LINES, 0, lineSegments.size());
-        // glDrawArrays(GL_POINTS, 0, normals.size()); //this draws out the normal end points
+        glPointSize(5.0f);                              // Set point size for better visibility
+        glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
+
+        // nada todo surface shit
+        //  Generate surface vertices
+        std::vector<glm::vec3> surfaceVertices;
+        generateSurface(lineSegments, surfaceVertices);
+
+        // Create VAO and VBO for surface
+        unsigned int surfaceVAO, surfaceVBO;
+        glGenVertexArrays(1, &surfaceVAO);
+        glGenBuffers(1, &surfaceVBO);
+
+        // Bind surface VAO
+        glBindVertexArray(surfaceVAO);
+
+        // Bind surface VBO
+        glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+
+        // Upload surface vertices data to GPU
+        glBufferData(GL_ARRAY_BUFFER, surfaceVertices.size() * sizeof(glm::vec3), &surfaceVertices[0], GL_STATIC_DRAW);
+
+        // Set vertex attribute pointers for surface vertices
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
+        glEnableVertexAttribArray(0);
+
+        // Draw the surface
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, surfaceVertices.size());
+
+        // Cleanup after rendering the surface
+        glDeleteVertexArrays(1, &surfaceVAO);
+        glDeleteBuffers(1, &surfaceVBO);
     }
 
     // Clean up
