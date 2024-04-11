@@ -8,7 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-// #include "shader.h"
+// #include "shader.h" #TODO: dian to move this back to a seperate file
 #include "shaderSource.h"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
@@ -259,16 +259,32 @@ std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
     return normals;
 }
 
-void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm::vec3> &surfaceVertices)
+void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals)
 {
     // Assuming lineSegments has at least two line segments
-    for (size_t i = 0; i < lineSegments.size() - 1; i += 2)
+    for (size_t i = 0; i < lineSegments.size() - 3; i += 2)
     {
         // Add vertices for rectangle formed by sequential pair of line segments
         surfaceVertices.push_back(lineSegments[i]);
         surfaceVertices.push_back(lineSegments[i + 1]);
+        surfaceVertices.push_back(lineSegments[i + 2]);
+        surfaceVertices.push_back(lineSegments[i + 3]);
+    }
+
+    // Compute normals for each triangle and assign to all vertices
+    for (size_t i = 0; i < surfaceVertices.size(); i += 3)
+    {
+        glm::vec3 edge1 = surfaceVertices[i + 1] - surfaceVertices[i];
+        glm::vec3 edge2 = surfaceVertices[i + 2] - surfaceVertices[i];
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+        surfaceNormals.push_back(normal);
+        surfaceNormals.push_back(normal);
+        surfaceNormals.push_back(normal);
     }
 }
+
+
 
 ///=========================================================================================///
 ///                                      Harmonograph Function
@@ -352,39 +368,52 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
 
         // Draw the line segments
         glDrawArrays(GL_LINES, 0, lineSegments.size());
-        glPointSize(5.0f);                              // Set point size for better visibility
-        glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
+        // glPointSize(5.0f);                              // Set point size for better visibility
+        // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
-        // nada todo surface shit
-        //  Generate surface vertices
+
+        // generate surface vertices and normals
         std::vector<glm::vec3> surfaceVertices;
-        generateSurface(lineSegments, surfaceVertices);
-
-        // Create VAO and VBO for surface
-        unsigned int surfaceVAO, surfaceVBO;
+        std::vector<glm::vec3> surfaceNormals;
+        generateSurface(lineSegments, surfaceVertices, surfaceNormals);
+        
+        // create + bind VAO and VBO for surface
+        unsigned int surfaceVAO, surfaceVBO, surfaceNormalVBO;
         glGenVertexArrays(1, &surfaceVAO);
         glGenBuffers(1, &surfaceVBO);
-
-        // Bind surface VAO
+        glGenBuffers(1, &surfaceNormalVBO);
         glBindVertexArray(surfaceVAO);
-
-        // Bind surface VBO
         glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-
-        // Upload surface vertices data to GPU
         glBufferData(GL_ARRAY_BUFFER, surfaceVertices.size() * sizeof(glm::vec3), &surfaceVertices[0], GL_STATIC_DRAW);
-
-        // Set vertex attribute pointers for surface vertices
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
+        
+
+        // Bind normal VBO
+        glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
+
+        // Upload surface normals data to GPU
+        glBufferData(GL_ARRAY_BUFFER, surfaceNormals.size() * sizeof(glm::vec3), &surfaceNormals[0], GL_STATIC_DRAW);
+
+        // Set vertex attribute pointers for surface normals
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
+        glEnableVertexAttribArray(1);
+
+        
+
         // Draw the surface
         glDrawArrays(GL_TRIANGLE_STRIP, 0, surfaceVertices.size());
+        glDrawArrays(GL_LINES, 0, surfaceNormals.size());
+
+        
 
         // Cleanup after rendering the surface
         glDeleteVertexArrays(1, &surfaceVAO);
         glDeleteBuffers(1, &surfaceVBO);
+        glDeleteBuffers(1, &surfaceNormalVBO);
     }
+
 
     // Clean up
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -393,6 +422,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
     glDeleteVertexArrays(1, &VAO);
 
     return vertices;
+    
 }
 
 ///=========================================================================================///
@@ -620,7 +650,6 @@ int main(void)
         ImGui::End();
 
         // Render OpenGL here
-        glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClearColor(0.95f, 0.95f, 0.95f, 1.0f); // change background colour
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
