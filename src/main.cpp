@@ -262,61 +262,27 @@ std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
 void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals)
 {
     // Assuming lineSegments has at least two line segments
-    for (size_t i = 0; i < lineSegments.size() - 1; i += 2)
+    for (size_t i = 0; i < lineSegments.size() - 3; i += 2)
     {
-        // add vertices for rectangle formed by sequential pair of line segments
+        // Add vertices for rectangle formed by sequential pair of line segments
         surfaceVertices.push_back(lineSegments[i]);
         surfaceVertices.push_back(lineSegments[i + 1]);
-        
-        // calculate the normal for the line segments
-        glm::vec3 edge = lineSegments[i + 1] - lineSegments[i];
-        glm::vec3 normal(-edge.y, edge.x, 0.0f);
-        normal = glm::normalize(normal);
-        
-        // push the same normal for both vertices
+        surfaceVertices.push_back(lineSegments[i + 2]);
+        surfaceVertices.push_back(lineSegments[i + 3]);
+    }
+
+    // Compute normals for each triangle and assign to all vertices
+    for (size_t i = 0; i < surfaceVertices.size(); i += 3)
+    {
+        glm::vec3 edge1 = surfaceVertices[i + 1] - surfaceVertices[i];
+        glm::vec3 edge2 = surfaceVertices[i + 2] - surfaceVertices[i];
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+        surfaceNormals.push_back(normal);
         surfaceNormals.push_back(normal);
         surfaceNormals.push_back(normal);
     }
 }
-
-// nada todo: this extrusion surface function works but doesnt maintain normals nor does it have side faces
-void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &extrudedIndices) {
-    // Initialize the index offset for the bottom vertices
-    unsigned int indexOffset = surfaceVertices.size();
-
-    // Extrude each vertex along its normal direction
-    for (size_t i = 0; i < surfaceVertices.size(); ++i) {
-        glm::vec3 extrudedVertex = surfaceVertices[i] + extrusionDistance * surfaceNormals[i];
-        extrudedVertices.push_back(surfaceVertices[i]);  // Original vertex
-        extrudedVertices.push_back(extrudedVertex);      // Extruded vertex
-    }
-
-    // Generate indices for the side faces of the extrusion
-    for (size_t i = 0; i < surfaceVertices.size() - 1; ++i) {
-        // Each side face consists of two triangles
-        extrudedIndices.push_back(i);
-        extrudedIndices.push_back(i + 1);
-        extrudedIndices.push_back(indexOffset + i + 1);
-
-        extrudedIndices.push_back(i);
-        extrudedIndices.push_back(indexOffset + i + 1);
-        extrudedIndices.push_back(indexOffset + i);
-    }
-
-    // Connect the last and first vertices to close the extruded shape
-    extrudedIndices.push_back(surfaceVertices.size() - 1);
-    extrudedIndices.push_back(0);
-    extrudedIndices.push_back(indexOffset);
-
-    extrudedIndices.push_back(surfaceVertices.size() - 1);
-    extrudedIndices.push_back(indexOffset);
-    extrudedIndices.push_back(indexOffset + surfaceVertices.size() - 1);
-}
-
-
-
-
-
 
 
 
@@ -342,6 +308,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         x = amplitude * sin(time * freqPtr1[0] + phasePtr1[0]) * exp(-dampPtr1[0] * time) + amplitude * sin(time * freqPtr1[1] + phasePtr1[1]) * exp(-dampPtr1[1] * time);
         y = amplitude * sin(time * freqPtr1[2] + phasePtr1[2]) * exp(-dampPtr1[2] * time) + amplitude * sin(time * freqPtr2[0] + phasePtr2[0]) * exp(-dampPtr2[0] * time);
         z = amplitude * sin(time * freqPtr2[1] + phasePtr2[1]) * exp(-dampPtr2[1] * time) + amplitude * sin(time * freqPtr2[2] + phasePtr1[2]) * exp(-dampPtr2[2] * time);
+        // z = time / 100; // nada TODO : temp to make the lines not intersect
 
         vertices.push_back(x);
         vertices.push_back(y);
@@ -399,13 +366,13 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
-        // -- uncomment the 3 lines belw if you want to draw the line segments
-        // glDrawArrays(GL_LINES, 0, lineSegments.size());
+        // Draw the line segments
+        glDrawArrays(GL_LINES, 0, lineSegments.size());
         // glPointSize(5.0f);                              // Set point size for better visibility
         // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
 
-        // generate surface vertices and normals and extrusions
+        // generate surface vertices and normals
         std::vector<glm::vec3> surfaceVertices;
         std::vector<glm::vec3> surfaceNormals;
         generateSurface(lineSegments, surfaceVertices, surfaceNormals);
@@ -427,38 +394,23 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
-        // Draw the extruded surface
-        glBindVertexArray(extrudedVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, extrudedVertices.size());
-
-        // Cleanup after rendering the extruded surface
-        glDeleteVertexArrays(1, &extrudedVAO);
-        glDeleteBuffers(1, &extrudedVBO);
         
-        // // create + bind VAO and VBO for surface
-        // unsigned int surfaceVAO, surfaceVBO, surfaceNormalVBO;
-        // glGenVertexArrays(1, &surfaceVAO);
-        // glGenBuffers(1, &surfaceVBO);
-        // glGenBuffers(1, &surfaceNormalVBO);
-        // glBindVertexArray(surfaceVAO);
-        // glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-        // glBufferData(GL_ARRAY_BUFFER, surfaceVertices.size() * sizeof(glm::vec3), &surfaceVertices[0], GL_STATIC_DRAW);
-        // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
-        // glEnableVertexAttribArray(0);
 
-    
-        // // Bind normal VBO - for surface shading
-        // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
-        // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
-        // glBufferData(GL_ARRAY_BUFFER, surfaceNormals.size() * sizeof(glm::vec3), &surfaceNormals[0], GL_STATIC_DRAW);
-        // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
-        // glEnableVertexAttribArray(1);
+        // Bind normal VBO
+        glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
 
-    
-        // // Draw the surface
-        // glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-        // glDrawArrays(GL_TRIANGLE_STRIP, 0, surfaceVertices.size());
+        // Upload surface normals data to GPU
+        glBufferData(GL_ARRAY_BUFFER, surfaceNormals.size() * sizeof(glm::vec3), &surfaceNormals[0], GL_STATIC_DRAW);
 
+        // Set vertex attribute pointers for surface normals
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
+        glEnableVertexAttribArray(1);
+
+        
+
+        // Draw the surface
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, surfaceVertices.size());
+        glDrawArrays(GL_LINES, 0, surfaceNormals.size());
 
         
 
