@@ -328,9 +328,53 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
 //     }
 // }
 
-void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &extrudedIndices)
+// void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &extrudedIndices)
+// {
+//     size_t numVertices = surfaceVertices.size();
+
+//     // Create vertices for the top surface of the extrusion
+//     for (size_t i = 0; i < numVertices; ++i)
+//     {
+//         // Extrude each vertex along its normal direction
+//         glm::vec3 extrudedVertex = surfaceVertices[i] + extrusionDistance * surfaceNormals[i];
+//         extrudedVertices.push_back(extrudedVertex);
+//     }
+
+//     // Create vertices for the bottom surface of the extrusion
+//     for (size_t i = 0; i < numVertices; ++i)
+//     {
+//         // Bottom surface vertices are the same as the original surface vertices but at a lower position
+//         glm::vec3 bottomVertex = surfaceVertices[i];
+//         extrudedVertices.push_back(bottomVertex);
+//     }
+
+//     // // Create indices for the side faces of the extrusion
+//     // for (size_t i = 0; i < numVertices; ++i)
+//     // {
+//     //     // Calculate indices for the two triangles that form each quad
+//     //     unsigned int next = (i + 1) % numVertices;
+
+//     //     // First triangle
+//     //     extrudedIndices.push_back(i);                           // Current top vertex
+//     //     extrudedIndices.push_back(i + numVertices);             // Current bottom vertex
+//     //     extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
+
+//     //     // Second triangle
+//     //     extrudedIndices.push_back(i);                           // Current top vertex
+//     //     extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
+//     //     extrudedIndices.push_back(next);                        // Next top vertex
+//     // }
+// }
+
+
+//nada to do - make one array but index it with seperate vector pointers for the - u will need 6 diff pointers lol
+
+void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices,std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices )
 {
     size_t numVertices = surfaceVertices.size();
+    size_t numExtrudedVertices = 2 * numVertices;
+
+    extrudedVertices.reserve(numExtrudedVertices);
 
     // Create vertices for the top surface of the extrusion
     for (size_t i = 0; i < numVertices; ++i)
@@ -348,30 +392,39 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
         extrudedVertices.push_back(bottomVertex);
     }
 
-    // Create indices for the side faces of the extrusion
-    for (size_t i = 0; i < numVertices; ++i)
+    // Create indices for the top + bottom surface, we get rid of last 4 indices due to normal abnormality
+    for (size_t i = 0; i < numVertices-4; ++i)
     {
-        // Calculate indices for the two triangles that form each quad
-        unsigned int next = (i + 1) % numVertices;
-
-        // First triangle
-        extrudedIndices.push_back(i);                           // Current top vertex
-        extrudedIndices.push_back(i + numVertices);             // Current bottom vertex
-        extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
-
-        // Second triangle
-        extrudedIndices.push_back(i);                           // Current top vertex
-        extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
-        extrudedIndices.push_back(next);                        // Next top vertex
+        topSurfaceIndices.push_back(i);
     }
+
+    for (size_t i = 0; i < numVertices-4; ++i)
+    {
+        bottomSurfaceIndices.push_back(numVertices + i);
+    }
+    
+    //create indices for front + end surface
+    frontSurfaceIndices.push_back(0);
+    frontSurfaceIndices.push_back(numVertices);
+    frontSurfaceIndices.push_back(1);
+    frontSurfaceIndices.push_back(numVertices+1);
+
+    endSurfaceIndices.push_back(numVertices-4-1);
+    endSurfaceIndices.push_back(2*(numVertices)-1-4);
+    endSurfaceIndices.push_back(numVertices-4-2);
+    endSurfaceIndices.push_back(2*(numVertices)-2-4);
+
+    //create indices for side faces
+    for (size_t i=0; i<numVertices-4; i += 2){
+        sideSurface1Indices.push_back(i);
+        sideSurface1Indices.push_back(i+numVertices);
+    }
+    for (size_t i=1; i<numVertices-4; i += 2){
+        sideSurface2Indices.push_back(i);
+        sideSurface2Indices.push_back(i+numVertices);
+    }
+    
 }
-
-
-
-
-
-
-
 
 
 
@@ -470,9 +523,15 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // Extrude surface
         std::vector<glm::vec3> extrudedVertices;
         float extrusionDistance = 0.1; // adjust extrusion here
-        std::vector<unsigned int> extrudedIndices;
+        std::vector<unsigned int> bottomSurfaceIndices;
+        std::vector<unsigned int> topSurfaceIndices;
+        std::vector<unsigned int> frontSurfaceIndices;
+        std::vector<unsigned int> endSurfaceIndices;
+        std::vector<unsigned int> sideSurface1Indices;
+        std::vector<unsigned int> sideSurface2Indices;
 
-        extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, extrudedIndices);
+
+        extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
 
         // Create and bind VAO and VBO for extruded surface
         unsigned int extrudedVAO, extrudedVBO;
@@ -480,17 +539,67 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         glGenBuffers(1, &extrudedVBO);
         glBindVertexArray(extrudedVAO);
         glBindBuffer(GL_ARRAY_BUFFER, extrudedVBO);
-        glBufferData(GL_ARRAY_BUFFER, extrudedVertices.size() * sizeof(glm::vec3), &extrudedVertices[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, extrudedVertices.size() * sizeof(glm::vec3), extrudedVertices.data(), GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
-        // Draw the extruded surface
+        // Create and bind VBOs for surface indices
+        unsigned int topSurfaceIndexVBO, bottomSurfaceIndexVBO, frontSurfaceIndexVBO, endSurfaceIndexVBO, sideSurface1IndexVBO, sideSurface2IndexVBO;
+        glGenBuffers(1, &topSurfaceIndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndices.size() * sizeof(unsigned int), topSurfaceIndices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &bottomSurfaceIndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndices.size() * sizeof(unsigned int), bottomSurfaceIndices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &frontSurfaceIndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndices.size() * sizeof(unsigned int), frontSurfaceIndices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &endSurfaceIndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndices.size() * sizeof(unsigned int), endSurfaceIndices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &sideSurface1IndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface1IndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sideSurface1Indices.size() * sizeof(unsigned int), sideSurface1Indices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &sideSurface2IndexVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface2IndexVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sideSurface2Indices.size() * sizeof(unsigned int), sideSurface2Indices.data(), GL_STATIC_DRAW);
+
+        // Draw the surfaces
         glBindVertexArray(extrudedVAO);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, extrudedVertices.size());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, topSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(extrudedVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, bottomSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(extrudedVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, frontSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(extrudedVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, endSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(extrudedVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface1IndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, sideSurface1Indices.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(extrudedVAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface2IndexVBO);
+        glDrawElements(GL_TRIANGLE_STRIP, sideSurface2Indices.size(), GL_UNSIGNED_INT, 0);
 
         // Cleanup after rendering the extruded surface
         glDeleteVertexArrays(1, &extrudedVAO);
         glDeleteBuffers(1, &extrudedVBO);
+        glDeleteBuffers(1, &topSurfaceIndexVBO);
+        glDeleteBuffers(1, &bottomSurfaceIndexVBO);
+
         
         // // create + bind VAO and VBO for surface
         // unsigned int surfaceVAO, surfaceVBO, surfaceNormalVBO;
