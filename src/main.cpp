@@ -280,7 +280,7 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
 }
 
 
-void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
+void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
 {
     size_t numVertices = surfaceVertices.size();
     size_t numExtrudedVertices = 2 * numVertices;
@@ -302,6 +302,7 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
         glm::vec3 bottomVertex = surfaceVertices[i];
         extrudedVertices.push_back(bottomVertex);
     }
+
 
     // Create indices for the top + bottom surface, we get rid of last 4 indices due to normal abnormality
     for (size_t i = 0; i < numVertices - 4; ++i)
@@ -336,6 +337,97 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
         sideSurface2Indices.push_back(i);
         sideSurface2Indices.push_back(i + numVertices);
     }
+}
+
+
+void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const std::vector<unsigned int>& indices, std::vector<glm::vec3>& normals) {
+    // Clear any existing normals
+    normals.clear();
+    normals.resize(vertices.size(), glm::vec3(0.0f));
+
+    // Calculate normals for each triangle in the triangle strip
+    for (size_t i = 0; i < indices.size() - 2; ++i) {
+        const glm::vec3& v0 = vertices[indices[i]];
+        const glm::vec3& v1 = vertices[indices[i + 1]];
+        const glm::vec3& v2 = vertices[indices[i + 2]];
+
+        // Calculate the normal using the cross product of two edges of the triangle
+        glm::vec3 edge1 = v1 - v0;
+        glm::vec3 edge2 = v2 - v0;
+        glm::vec3 triangleNormal = glm::cross(edge1, edge2);
+
+        // Accumulate the normal to each vertex of the triangle
+        normals[indices[i]] += triangleNormal;
+        normals[indices[i + 1]] += triangleNormal;
+        normals[indices[i + 2]] += triangleNormal;
+    }
+
+    // Normalize the accumulated normals
+    for (auto& normal : normals) {
+        if (glm::length(normal) > 0.0f) {
+            normal = glm::normalize(normal);
+        }
+    }
+}
+
+
+
+///=========================================================================================///
+///                                       Export OBJ
+///=========================================================================================///
+
+
+void exportOBJ(const std::vector<glm::vec3>& vertices, const std::string& filename) {
+    std::ofstream outputFile(filename);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to open file " << filename << " for writing\n";
+        return;
+    }
+
+    // iterate over vertices and format them as "v x y z" 
+    for (const auto& vertex : vertices) {
+        outputFile << "v " << vertex.x << " " << vertex.y << " " << vertex.z << "\n";
+    }
+
+    // iterate over normals
+
+    // -- create faces
+
+        //todo - top
+        //todo - bottom
+        //todo - front
+        //todo - end
+        //todo - side1
+        //todo - side2
+
+    outputFile.close();
+}
+
+
+///=========================================================================================///
+///                             Helper Functions for binding VBO
+///=========================================================================================///
+
+void generateAndBindIndexVBO(unsigned int& indexVBO, const std::vector<unsigned int>& indices) {
+    glGenBuffers(1, &indexVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexVBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+}
+
+// Function to generate and bind a VBO for normals
+void generateAndBindNormalVBO(unsigned int& normalVBO, const std::vector<glm::vec3>& normals) {
+    glGenBuffers(1, &normalVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(1); // Assuming the attribute location for normals is 1
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+}
+
+// Draw surface using indices and normals VBOs
+void drawSurface(unsigned int indexVBO, unsigned int normalVBO, const std::vector<unsigned int>& indices, GLsizei count) {
+    glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexVBO);
+    glDrawElements(GL_TRIANGLE_STRIP, count, GL_UNSIGNED_INT, 0);
 }
 
 ///=========================================================================================///
@@ -427,17 +519,24 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         std::vector<glm::vec3> surfaceNormals;
         generateSurface(lineSegments, surfaceVertices, surfaceNormals);
 
+        std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals; // NADA TODO: consider making this a map! 
+
+
         // Extrude surface
         std::vector<glm::vec3> extrudedVertices;
         float extrusionDistance = 0.1; // adjust extrusion here
-        std::vector<unsigned int> bottomSurfaceIndices;
-        std::vector<unsigned int> topSurfaceIndices;
-        std::vector<unsigned int> frontSurfaceIndices;
-        std::vector<unsigned int> endSurfaceIndices;
-        std::vector<unsigned int> sideSurface1Indices;
-        std::vector<unsigned int> sideSurface2Indices;
+        std::vector<unsigned int> topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices; // NADA TODO: consider making the indices a map! 
 
         extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
+        //NADA TODO: calc the normals here:
+
+        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, frontSurfaceIndices, frontSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals);
+        calculateTriangleStripNormals(extrudedVertices, sideSurface2Indices, sideSurface2Normals);
+
 
         // Create and bind VAO and VBO for extruded surface
         unsigned int extrudedVAO, extrudedVBO;
@@ -449,56 +548,34 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         glEnableVertexAttribArray(0);
 
-        // Create and bind VBOs for surface indices
+        // Create and bind VBOs for surface indices 
         unsigned int topSurfaceIndexVBO, bottomSurfaceIndexVBO, frontSurfaceIndexVBO, endSurfaceIndexVBO, sideSurface1IndexVBO, sideSurface2IndexVBO;
-        glGenBuffers(1, &topSurfaceIndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndices.size() * sizeof(unsigned int), topSurfaceIndices.data(), GL_STATIC_DRAW);
+        unsigned int topSurfaceNormalsVBO, bottomSurfaceNormalsVBO, frontSurfaceNormalsVBO, endSurfaceNormalsVBO, sideSurface1NormalsVBO, sideSurface2NormalsVBO;
 
-        glGenBuffers(1, &bottomSurfaceIndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndices.size() * sizeof(unsigned int), bottomSurfaceIndices.data(), GL_STATIC_DRAW);
+        // Generate and bind VBOs for surface indices
+        generateAndBindIndexVBO(topSurfaceIndexVBO, topSurfaceIndices);
+        generateAndBindIndexVBO(bottomSurfaceIndexVBO, bottomSurfaceIndices);
+        generateAndBindIndexVBO(frontSurfaceIndexVBO, frontSurfaceIndices);
+        generateAndBindIndexVBO(endSurfaceIndexVBO, endSurfaceIndices);
+        generateAndBindIndexVBO(sideSurface1IndexVBO, sideSurface1Indices);
+        generateAndBindIndexVBO(sideSurface2IndexVBO, sideSurface2Indices);
 
-        glGenBuffers(1, &frontSurfaceIndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndices.size() * sizeof(unsigned int), frontSurfaceIndices.data(), GL_STATIC_DRAW);
+        // Generate and bind VBOs for surface normals
+        generateAndBindNormalVBO(topSurfaceNormalsVBO, topSurfaceNormals);
+        generateAndBindNormalVBO(bottomSurfaceNormalsVBO, bottomSurfaceNormals);
+        generateAndBindNormalVBO(frontSurfaceNormalsVBO, frontSurfaceNormals);
+        generateAndBindNormalVBO(endSurfaceNormalsVBO, endSurfaceNormals);
+        generateAndBindNormalVBO(sideSurface1NormalsVBO, sideSurface1Normals);
+        generateAndBindNormalVBO(sideSurface2NormalsVBO, sideSurface2Normals);
 
-        glGenBuffers(1, &endSurfaceIndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndices.size() * sizeof(unsigned int), endSurfaceIndices.data(), GL_STATIC_DRAW);
+        // Draw each surface
+        drawSurface(topSurfaceIndexVBO, topSurfaceNormalsVBO, topSurfaceIndices, topSurfaceIndices.size());
+        drawSurface(bottomSurfaceIndexVBO, bottomSurfaceNormalsVBO, bottomSurfaceIndices, bottomSurfaceIndices.size());
+        drawSurface(frontSurfaceIndexVBO, frontSurfaceNormalsVBO, frontSurfaceIndices, frontSurfaceIndices.size());
+        drawSurface(endSurfaceIndexVBO, endSurfaceNormalsVBO, endSurfaceIndices, endSurfaceIndices.size());
+        drawSurface(sideSurface1IndexVBO, sideSurface1NormalsVBO, sideSurface1Indices, sideSurface1Indices.size());
+        drawSurface(sideSurface2IndexVBO, sideSurface2NormalsVBO, sideSurface2Indices, sideSurface2Indices.size());
 
-        glGenBuffers(1, &sideSurface1IndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface1IndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sideSurface1Indices.size() * sizeof(unsigned int), sideSurface1Indices.data(), GL_STATIC_DRAW);
-
-        glGenBuffers(1, &sideSurface2IndexVBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface2IndexVBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sideSurface2Indices.size() * sizeof(unsigned int), sideSurface2Indices.data(), GL_STATIC_DRAW);
-
-        // Draw the surfaces
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, topSurfaceIndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, topSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bottomSurfaceIndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, bottomSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frontSurfaceIndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, frontSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, endSurfaceIndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, endSurfaceIndices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface1IndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, sideSurface1Indices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(extrudedVAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sideSurface2IndexVBO);
-        glDrawElements(GL_TRIANGLE_STRIP, sideSurface2Indices.size(), GL_UNSIGNED_INT, 0);
 
         // Cleanup after rendering the extruded surface
         glDeleteVertexArrays(1, &extrudedVAO);
@@ -518,7 +595,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // glEnableVertexAttribArray(0);
 
         // // Bind normal VBO - for surface shading
-        // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
         // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
         // glBufferData(GL_ARRAY_BUFFER, surfaceNormals.size() * sizeof(glm::vec3), &surfaceNormals[0], GL_STATIC_DRAW);
         // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
