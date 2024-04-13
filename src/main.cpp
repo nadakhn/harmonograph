@@ -267,12 +267,12 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
         // add vertices for rectangle formed by sequential pair of line segments
         surfaceVertices.push_back(lineSegments[i]);
         surfaceVertices.push_back(lineSegments[i + 1]);
-        
+
         // calculate the normal for the line segments
         glm::vec3 edge = lineSegments[i + 1] - lineSegments[i];
         glm::vec3 normal(-edge.y, edge.x, 0.0f);
         normal = glm::normalize(normal);
-        
+
         // push the same normal for both vertices
         surfaceNormals.push_back(normal);
         surfaceNormals.push_back(normal);
@@ -321,7 +321,7 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
 //         extrudedIndices.push_back(i + 2);
 //         extrudedIndices.push_back(i + 3);
 //         extrudedIndices.push_back(i);
-        
+
 //         extrudedIndices.push_back(i + 2);
 //         extrudedIndices.push_back(i + 1);
 //         extrudedIndices.push_back(i);
@@ -366,10 +366,9 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
 //     // }
 // }
 
+// nada to do - make one array but index it with seperate vector pointers for the - u will need 6 diff pointers lol
 
-//nada to do - make one array but index it with seperate vector pointers for the - u will need 6 diff pointers lol
-
-void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices,std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices )
+void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
 {
     size_t numVertices = surfaceVertices.size();
     size_t numExtrudedVertices = 2 * numVertices;
@@ -393,42 +392,39 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
     }
 
     // Create indices for the top + bottom surface, we get rid of last 4 indices due to normal abnormality
-    for (size_t i = 0; i < numVertices-4; ++i)
+    for (size_t i = 0; i < numVertices - 4; ++i)
     {
         topSurfaceIndices.push_back(i);
     }
 
-    for (size_t i = 0; i < numVertices-4; ++i)
+    for (size_t i = 0; i < numVertices - 4; ++i)
     {
         bottomSurfaceIndices.push_back(numVertices + i);
     }
-    
-    //create indices for front + end surface
+
+    // create indices for front + end surface
     frontSurfaceIndices.push_back(0);
     frontSurfaceIndices.push_back(numVertices);
     frontSurfaceIndices.push_back(1);
-    frontSurfaceIndices.push_back(numVertices+1);
+    frontSurfaceIndices.push_back(numVertices + 1);
 
-    endSurfaceIndices.push_back(numVertices-4-1);
-    endSurfaceIndices.push_back(2*(numVertices)-1-4);
-    endSurfaceIndices.push_back(numVertices-4-2);
-    endSurfaceIndices.push_back(2*(numVertices)-2-4);
+    endSurfaceIndices.push_back(numVertices - 4 - 1);
+    endSurfaceIndices.push_back(2 * (numVertices)-1 - 4);
+    endSurfaceIndices.push_back(numVertices - 4 - 2);
+    endSurfaceIndices.push_back(2 * (numVertices)-2 - 4);
 
-    //create indices for side faces
-    for (size_t i=0; i<numVertices-4; i += 2){
+    // create indices for side faces
+    for (size_t i = 0; i < numVertices - 4; i += 2)
+    {
         sideSurface1Indices.push_back(i);
-        sideSurface1Indices.push_back(i+numVertices);
+        sideSurface1Indices.push_back(i + numVertices);
     }
-    for (size_t i=1; i<numVertices-4; i += 2){
+    for (size_t i = 1; i < numVertices - 4; i += 2)
+    {
         sideSurface2Indices.push_back(i);
-        sideSurface2Indices.push_back(i+numVertices);
+        sideSurface2Indices.push_back(i + numVertices);
     }
-    
 }
-
-
-
-
 
 ///=========================================================================================///
 ///                                      Harmonograph Function
@@ -515,7 +511,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // glPointSize(5.0f);                              // Set point size for better visibility
         // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
-
         // generate surface vertices and normals and extrusions
         std::vector<glm::vec3> surfaceVertices;
         std::vector<glm::vec3> surfaceNormals;
@@ -530,7 +525,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         std::vector<unsigned int> endSurfaceIndices;
         std::vector<unsigned int> sideSurface1Indices;
         std::vector<unsigned int> sideSurface2Indices;
-
 
         extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
 
@@ -601,7 +595,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         glDeleteBuffers(1, &topSurfaceIndexVBO);
         glDeleteBuffers(1, &bottomSurfaceIndexVBO);
 
-        
         // // create + bind VAO and VBO for surface
         // unsigned int surfaceVAO, surfaceVBO, surfaceNormalVBO;
         // glGenVertexArrays(1, &surfaceVAO);
@@ -613,7 +606,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         // glEnableVertexAttribArray(0);
 
-    
         // // Bind normal VBO - for surface shading
         // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
         // glBindBuffer(GL_ARRAY_BUFFER, surfaceNormalVBO);
@@ -621,20 +613,15 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
         // glEnableVertexAttribArray(1);
 
-    
         // // Draw the surface
         // glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, surfaceVertices.size());
-
-
-        
 
         // // Cleanup after rendering the surface
         // glDeleteVertexArrays(1, &surfaceVAO);
         // glDeleteBuffers(1, &surfaceVBO);
         // glDeleteBuffers(1, &surfaceNormalVBO);
     }
-
 
     // Clean up
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -643,7 +630,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
     glDeleteVertexArrays(1, &VAO);
 
     return vertices;
-    
 }
 
 ///=========================================================================================///
@@ -837,23 +823,22 @@ int main(void)
         static int clicked = 0;
         ImGui::Begin("Harmonograph Controls");
 
-        ImGui::SliderFloat("Speed", &animationIncrement, 0.01f, 0.5f, "Speed: %.4f");
+        ImGui::SliderFloat("Speed", &animationIncrement, 0.01f, 0.5f, "Speed: %.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::SliderFloat("Amplitude", &amplitude, 0.01f, 5.0f, "Amplitude: %.4f");
+        ImGui::SliderFloat("Amplitude", &amplitude, 0.01f, 5.0f, "Amplitude: %.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 1.0f, "%.4f");
-        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Damp Set 1", dampPtr1, 0.01f, 0.0f, 1.0f, "%.4f");
-        ImGui::DragFloat3("Damp Set 2", dampPtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Damp Set 1", dampPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Damp Set 2", dampPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 1.0f, "%.4f");
-        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f");
+        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
         if (ImGui::Button("Freeze"))
         {
             freeze++;
-            isAnimating = !isAnimating;
         }
         ImGui::SameLine();
         if (ImGui::Button("Reset"))
@@ -861,6 +846,11 @@ int main(void)
             animationTime = 0;
             freeze = 1;
             isAnimating = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Extrude"))
+        {
+            isAnimating = !isAnimating;
         }
         ImGui::SameLine();
         ImGui::Button("Preset 1");
