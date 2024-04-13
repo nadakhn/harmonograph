@@ -279,95 +279,6 @@ void generateSurface(const std::vector<glm::vec3> &lineSegments, std::vector<glm
     }
 }
 
-// nada todo: this extrusion surface function works but doesnt maintain normals nor does it have side faces
-// void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &extrudedIndices) {
-//     size_t numVertices = surfaceVertices.size();
-//     size_t numRows = numVertices / 2; // Assuming each row of the triangle strip has 2 vertices
-
-//     // Extrude each row of the triangle strip
-//     for (size_t row = 0; row < numRows - 1; ++row) {
-//         // Indices of the current row
-//         size_t startIndex = row * 2;
-//         size_t nextStartIndex = (row + 1) * 2;
-
-//         // Extrude each vertex in the current row
-//         for (size_t col = 0; col < 2; ++col) {
-//             // Indices of the vertices to be extruded
-//             size_t currentIndex = startIndex + col;
-//             size_t nextIndex = nextStartIndex + col;
-
-//             // Calculate the extruded vertices
-//             glm::vec3 extrudedCurrent = surfaceVertices[currentIndex] + extrusionDistance * surfaceNormals[currentIndex];
-//             glm::vec3 extrudedNext = surfaceVertices[nextIndex] + extrusionDistance * surfaceNormals[nextIndex];
-
-//             // Add the vertices to the extrudedVertices vector
-//             extrudedVertices.push_back(surfaceVertices[currentIndex]);
-//             extrudedVertices.push_back(extrudedCurrent);
-//             extrudedVertices.push_back(surfaceVertices[nextIndex]);
-//             extrudedVertices.push_back(extrudedNext);
-//         }
-//     }
-
-//     // Generate indices for the extruded surface
-//     for (size_t i = 0; i < extrudedVertices.size() - 2; i += 4) {
-//         extrudedIndices.push_back(i);
-//         extrudedIndices.push_back(i + 1);
-//         extrudedIndices.push_back(i + 2);
-
-//         extrudedIndices.push_back(i + 1);
-//         extrudedIndices.push_back(i + 3);
-//         extrudedIndices.push_back(i + 2);
-
-//         extrudedIndices.push_back(i + 2);
-//         extrudedIndices.push_back(i + 3);
-//         extrudedIndices.push_back(i);
-        
-//         extrudedIndices.push_back(i + 2);
-//         extrudedIndices.push_back(i + 1);
-//         extrudedIndices.push_back(i);
-//     }
-// }
-
-// void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &extrudedIndices)
-// {
-//     size_t numVertices = surfaceVertices.size();
-
-//     // Create vertices for the top surface of the extrusion
-//     for (size_t i = 0; i < numVertices; ++i)
-//     {
-//         // Extrude each vertex along its normal direction
-//         glm::vec3 extrudedVertex = surfaceVertices[i] + extrusionDistance * surfaceNormals[i];
-//         extrudedVertices.push_back(extrudedVertex);
-//     }
-
-//     // Create vertices for the bottom surface of the extrusion
-//     for (size_t i = 0; i < numVertices; ++i)
-//     {
-//         // Bottom surface vertices are the same as the original surface vertices but at a lower position
-//         glm::vec3 bottomVertex = surfaceVertices[i];
-//         extrudedVertices.push_back(bottomVertex);
-//     }
-
-//     // // Create indices for the side faces of the extrusion
-//     // for (size_t i = 0; i < numVertices; ++i)
-//     // {
-//     //     // Calculate indices for the two triangles that form each quad
-//     //     unsigned int next = (i + 1) % numVertices;
-
-//     //     // First triangle
-//     //     extrudedIndices.push_back(i);                           // Current top vertex
-//     //     extrudedIndices.push_back(i + numVertices);             // Current bottom vertex
-//     //     extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
-
-//     //     // Second triangle
-//     //     extrudedIndices.push_back(i);                           // Current top vertex
-//     //     extrudedIndices.push_back(next + numVertices);          // Next bottom vertex
-//     //     extrudedIndices.push_back(next);                        // Next top vertex
-//     // }
-// }
-
-
-//nada to do - make one array but index it with seperate vector pointers for the - u will need 6 diff pointers lol
 
 void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices,std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices )
 {
@@ -452,7 +363,6 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         x = amplitude * sin(time * freqPtr1[0] + phasePtr1[0]) * exp(-dampPtr1[0] * time) + amplitude * sin(time * freqPtr1[1] + phasePtr1[1]) * exp(-dampPtr1[1] * time);
         y = amplitude * sin(time * freqPtr1[2] + phasePtr1[2]) * exp(-dampPtr1[2] * time) + amplitude * sin(time * freqPtr2[0] + phasePtr2[0]) * exp(-dampPtr2[0] * time);
         z = amplitude * sin(time * freqPtr2[1] + phasePtr2[1]) * exp(-dampPtr2[1] * time) + amplitude * sin(time * freqPtr2[2] + phasePtr1[2]) * exp(-dampPtr2[2] * time);
-        // z = time / 100; // nada TODO : temp to make the lines not intersect
 
         vertices.push_back(x);
         vertices.push_back(y);
