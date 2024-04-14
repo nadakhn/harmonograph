@@ -427,6 +427,15 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
 }
 
 ///=========================================================================================///
+///                                      Export to OBJ Function
+///=========================================================================================///
+
+void exportToObj()
+{
+    // insert obj code here
+}
+
+///=========================================================================================///
 ///                                      Harmonograph Function
 ///=========================================================================================///
 
@@ -827,14 +836,14 @@ int main(void)
 
         ImGui::SliderFloat("Amplitude", &amplitude, 0.01f, 5.0f, "Amplitude: %.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 4.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 4.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
         ImGui::DragFloat3("Damp Set 1", dampPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
         ImGui::DragFloat3("Damp Set 2", dampPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 3.14f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 3.14f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
         if (ImGui::Button("Freeze"))
         {
@@ -858,6 +867,11 @@ int main(void)
         ImGui::Button("Preset 2");
         ImGui::SameLine();
         ImGui::Button("Preset 3");
+        ImGui::SameLine();
+        if (ImGui::Button("Export"))
+        {
+            exportToObj();
+        }
         ImGui::End();
 
         // Render OpenGL here
