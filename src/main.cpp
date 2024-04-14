@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <list>
+#include <map>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -59,6 +60,7 @@ glm::vec3 meshColor;
 // Animation Control
 bool isAnimating = true;
 float animationTime = 0.0f;
+bool exportNow = false; //nada todo: idk where this should go
 
 // Parameters
 float amplitude = 0.5f;
@@ -377,35 +379,60 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const
 ///=========================================================================================///
 
 
-void exportOBJ(const std::vector<glm::vec3>& vertices, const std::string& filename) {
+void exportOBJ(const std::vector<glm::vec3>& extrudedVertices, const std::string& filename, std::vector<glm::vec3> allNormals, int startingIndices[],
+                std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices) 
+{
+
+    size_t numVertices = extrudedVertices.size()/2;
+
     std::ofstream outputFile(filename);
     if (!outputFile.is_open()) {
         std::cerr << "Error: Unable to open file " << filename << " for writing\n";
         return;
     }
 
-    // iterate over vertices and format them as "v x y z" 
-    for (const auto& vertex : vertices) {
+    // iterate over vertices
+    for (const auto& vertex : extrudedVertices) {
         outputFile << "v " << vertex.x << " " << vertex.y << " " << vertex.z << "\n";
     }
 
-    // iterate over normals
+    // iterate over normals 
+     for (const auto& normal : allNormals) {
+        outputFile << "n " << normal.x << " " << normal.y << " " << normal.z << "\n";
+    }
 
-    // -- create faces
+    auto exportFaces = [&outputFile](const std::vector<unsigned int>& surfaceIndices, int start) {
+        // Iterate through each triangle strip
+        for (int i = 0; i < surfaceIndices.size() - 2 - 4; ++i) { // - 4 bc we ignore the last 4 indices!!
+            // Determine vertex indices for the current face
+            int v1 = surfaceIndices[i];
+            int v2 = surfaceIndices[i + 1];
+            int v3 = surfaceIndices[i + 2];
 
-        //todo - top
-        //todo - bottom
-        //todo - front
-        //todo - end
-        //todo - side1
-        //todo - side2
+            // determine normal indices for current face
+            int vn1 = start + i ; //mapped to get starting indices for each surface, done below in main! 
+            int vn2 = start + i + 1;
+            int vn3 = start + i + 2;
+
+            // Export face with vertex indices 
+            outputFile << "f " << v1 << "//" << vn1 << " " << v2 << "//" << vn2 << " " << v3 << "//" << vn3 << "\n";
+        }
+    };
+
+
+        exportFaces(topSurfaceIndices,startingIndices[0]);
+        exportFaces(bottomSurfaceIndices,startingIndices[1]);
+        exportFaces(frontSurfaceIndices,startingIndices[2]);
+        exportFaces(endSurfaceIndices,startingIndices[3]);
+        exportFaces(sideSurface1Indices,startingIndices[4]);
+        exportFaces(sideSurface2Indices,startingIndices[5]);
 
     outputFile.close();
 }
 
 
 ///=========================================================================================///
-///                             Helper Functions for binding VBO
+///                             Helper Functions for VBO
 ///=========================================================================================///
 
 void generateAndBindIndexVBO(unsigned int& indexVBO, const std::vector<unsigned int>& indices) {
@@ -434,7 +461,7 @@ void drawSurface(unsigned int indexVBO, unsigned int normalVBO, const std::vecto
 ///                                      Harmonograph Function
 ///=========================================================================================///
 
-std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
+void drawHarmonograph(float animationTime, bool renderSurface, bool exportNow)
 {
     // Buffers for harmonograph line segments
     unsigned int VBO, VAO;
@@ -519,16 +546,15 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         std::vector<glm::vec3> surfaceNormals;
         generateSurface(lineSegments, surfaceVertices, surfaceNormals);
 
-        std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals; // NADA TODO: consider making this a map! 
+        std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 
 
         // Extrude surface
         std::vector<glm::vec3> extrudedVertices;
         float extrusionDistance = 0.1; // adjust extrusion here
-        std::vector<unsigned int> topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices; // NADA TODO: consider making the indices a map! 
+        std::vector<unsigned int> topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices;
 
         extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
-        //NADA TODO: calc the normals here:
 
         calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
@@ -537,6 +563,25 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals);
         calculateTriangleStripNormals(extrudedVertices, sideSurface2Indices, sideSurface2Normals);
 
+       std::vector<std::vector<glm::vec3>> allNormalsList = {
+            topSurfaceNormals, bottomSurfaceNormals, 
+            frontSurfaceNormals, endSurfaceNormals,
+            sideSurface1Normals, sideSurface2Normals
+        };
+
+        std::vector<glm::vec3> allNormals;
+
+        int currentIndex = 0;
+
+        constexpr int numGroups = 6; // Number of groups
+        int startingIndices[numGroups] = {0}; // Initialize all elements to 0
+        allNormals.clear();
+
+        for (int i = 0; i < numGroups; ++i) {
+            startingIndices[i] = currentIndex;
+            allNormals.insert(allNormals.end(), allNormalsList[i].begin(), allNormalsList[i].end());
+            currentIndex += allNormalsList[i].size();
+        }
 
         // Create and bind VAO and VBO for extruded surface
         unsigned int extrudedVAO, extrudedVBO;
@@ -608,6 +653,15 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
         // glDeleteVertexArrays(1, &surfaceVAO);
         // glDeleteBuffers(1, &surfaceVBO);
         // glDeleteBuffers(1, &surfaceNormalVBO);
+
+        //export object here when click freeze when its in extrusion mode..?
+        // if (exportNow){
+        //      exportOBJ(extrudedVertices, "output.txt", allNormals, startingIndices,
+        //   topSurfaceIndices, bottomSurfaceIndices, 
+        //   frontSurfaceIndices, endSurfaceIndices, 
+        //   sideSurface1Indices, sideSurface2Indices);
+
+        // }
     }
 
     // Clean up
@@ -616,7 +670,7 @@ std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
 
-    return vertices;
+    // return vertices;
 }
 
 ///=========================================================================================///
@@ -830,6 +884,7 @@ int main(void)
         ImGui::SameLine();
         if (ImGui::Button("Reset"))
         {
+            exportNow = true; //nada temp add a flag here to run export object
             animationTime = 0;
             freeze = 1;
             isAnimating = true;
@@ -861,7 +916,7 @@ int main(void)
         glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
-        std::vector<float> vertices = drawHarmonograph(animationTime, !isAnimating);
+        drawHarmonograph(animationTime, !isAnimating, exportNow);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
