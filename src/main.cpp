@@ -71,6 +71,8 @@ float *dampPtr2 = new float[3];
 float *phasePtr1 = new float[3];
 float *phasePtr2 = new float[3];
 
+std::vector<float> vertices;
+
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
 ///=========================================================================================///
@@ -430,7 +432,7 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, const std::ve
 ///                                      Export to OBJ Function
 ///=========================================================================================///
 
-void exportToObj()
+void exportToObj(std::vector<float> vertices)
 {
     // insert obj code here
 }
@@ -870,7 +872,7 @@ int main(void)
         ImGui::SameLine();
         if (ImGui::Button("Export"))
         {
-            exportToObj();
+            exportToObj(vertices);
         }
         ImGui::End();
 
@@ -888,7 +890,7 @@ int main(void)
         glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
-        std::vector<float> vertices = drawHarmonograph(animationTime, !isAnimating);
+        vertices = drawHarmonograph(animationTime, !isAnimating);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
