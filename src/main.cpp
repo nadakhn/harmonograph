@@ -73,6 +73,8 @@ float *dampPtr2 = new float[3];
 float *phasePtr1 = new float[3];
 float *phasePtr2 = new float[3];
 
+std::vector<float> vertices;
+
 ///=========================================================================================///
 ///                             Functions for Rendering 3D Model
 ///=========================================================================================///
@@ -379,7 +381,7 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const
 ///=========================================================================================///
 
 
-void exportOBJ(const std::vector<glm::vec3>& extrudedVertices, const std::string& filename, std::vector<glm::vec3> allNormals, int startingIndices[],
+void exportToObj(const std::vector<glm::vec3>& extrudedVertices, const std::string& filename, std::vector<glm::vec3> allNormals, int startingIndices[],
                 std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices) 
 {
 
@@ -461,7 +463,7 @@ void drawSurface(unsigned int indexVBO, unsigned int normalVBO, const std::vecto
 ///                                      Harmonograph Function
 ///=========================================================================================///
 
-void drawHarmonograph(float animationTime, bool renderSurface, bool exportNow)
+std::vector<float> drawHarmonograph(float animationTime, bool renderSurface)
 {
     // Buffers for harmonograph line segments
     unsigned int VBO, VAO;
@@ -654,14 +656,6 @@ void drawHarmonograph(float animationTime, bool renderSurface, bool exportNow)
         // glDeleteBuffers(1, &surfaceVBO);
         // glDeleteBuffers(1, &surfaceNormalVBO);
 
-        //export object here when click freeze when its in extrusion mode..?
-        // if (exportNow){
-        //      exportOBJ(extrudedVertices, "output.txt", allNormals, startingIndices,
-        //   topSurfaceIndices, bottomSurfaceIndices, 
-        //   frontSurfaceIndices, endSurfaceIndices, 
-        //   sideSurface1Indices, sideSurface2Indices);
-
-        // }
     }
 
     // Clean up
@@ -670,7 +664,7 @@ void drawHarmonograph(float animationTime, bool renderSurface, bool exportNow)
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
 
-    // return vertices;
+    return vertices;
 }
 
 ///=========================================================================================///
@@ -868,14 +862,14 @@ int main(void)
 
         ImGui::SliderFloat("Amplitude", &amplitude, 0.01f, 5.0f, "Amplitude: %.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Frequency Set 1", freqPtr1, 0.01f, 0.0f, 4.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Frequency Set 2", freqPtr2, 0.01f, 0.0f, 4.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
         ImGui::DragFloat3("Damp Set 1", dampPtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
         ImGui::DragFloat3("Damp Set 2", dampPtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
-        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 1.0f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Phase Set 1", phasePtr1, 0.01f, 0.0f, 3.14f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat3("Phase Set 2", phasePtr2, 0.01f, 0.0f, 3.14f, "%.4f", ImGuiSliderFlags_AlwaysClamp);
 
         if (ImGui::Button("Freeze"))
         {
@@ -900,6 +894,11 @@ int main(void)
         ImGui::Button("Preset 2");
         ImGui::SameLine();
         ImGui::Button("Preset 3");
+        ImGui::SameLine();
+        if (ImGui::Button("Export"))
+        {
+            // exportToObj();
+        }
         ImGui::End();
 
         // Render OpenGL here
@@ -916,7 +915,7 @@ int main(void)
         glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
-        drawHarmonograph(animationTime, !isAnimating, exportNow);
+        vertices = drawHarmonograph(animationTime, !isAnimating);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
