@@ -270,7 +270,7 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const
     normals.resize(vertices.size(), glm::vec3(0.0f));
 
     // Calculate normals for each triangle in the triangle strip
-    for (size_t i = 0; i < indices.size() - 2; ++i) {
+    for (size_t i = 0; i < indices.size() - 3; ++i) {
         const glm::vec3& v0 = vertices[indices[i]];
         const glm::vec3& v1 = vertices[indices[i + 1]];
         const glm::vec3& v2 = vertices[indices[i + 2]];
@@ -300,18 +300,23 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const
 
 void generateSurface(std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals)
 {
-    // Assuming lineSegments has at least two line segments
-    for (size_t i = 0; i < surfaceVertices.size() - 1; i += 2)
-    {
-        // calculate the normal for the line segments
-        glm::vec3 edge = surfaceVertices[i + 1] - surfaceVertices[i];
-        glm::vec3 normal(-edge.y, edge.x, 0.0f);
-        normal = glm::normalize(normal);
+    // // Assuming lineSegments has at least two line segments
+    // for (size_t i = 0; i < surfaceVertices.size() - 1; i += 2)
+    // {
+    //     // calculate the normal for the line segments
+    //     glm::vec3 edge = surfaceVertices[i + 1] - surfaceVertices[i];
+    //     glm::vec3 normal(-edge.y, edge.x, 0.0f);
+    //     normal = glm::normalize(normal);
 
-        // push the same normal for both vertices
-        surfaceNormals.push_back(normal);
-        surfaceNormals.push_back(normal);
-    }
+    //     // push the same normal for both vertices
+    //     surfaceNormals.push_back(normal);
+    //     surfaceNormals.push_back(normal);
+    // }
+
+    //attempting to use calcTriangleStripNormal here
+    std::vector<unsigned int> indices(vertices.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    calculateTriangleStripNormals(surfaceVertices,indices,surfaceNormals);
 }
 
 
@@ -550,8 +555,11 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
         // generate surface vertices and normals and extrusions
-        std::vector<glm::vec3> surfaceNormals;
-        generateSurface(surfaceVertices, surfaceNormals);
+        std::vector<glm::vec3> surfaceNormals(surfaceVertices.size());
+        // generateSurface(surfaceVertices, surfaceNormals);
+        std::vector<unsigned int> indices(surfaceVertices.size());
+        std::iota(indices.begin(), indices.end(), 0);
+        calculateTriangleStripNormals(surfaceVertices,indices,surfaceNormals);
 
         std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 

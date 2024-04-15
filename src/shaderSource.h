@@ -43,7 +43,7 @@ const char *fragmentShaderSource =
         "float ambientStrength = 0.3;"
         "vec3 ambient = ambientStrength * lightColor;"
 
-        "float diffuseStrength = 0.6;"
+        "float diffuseStrength = 0.8;"
         "vec3 lightPos = vec3(1.0,1.0,10.0);"
         "vec3 norm = normalize(facenormal);"
         "vec3 lightDir = normalize(lightPos - FragPos);"
