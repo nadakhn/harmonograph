@@ -236,7 +236,7 @@ void cursor_pos_callback(GLFWwindow *window, double mouseX, double mouseY)
 }
 
 ///=========================================================================================///
-///                                  Vertex Normals + Surfaces
+///                          Vertex Normals + Surfaces + Extrusions
 ///=========================================================================================///
 
 // Function to calculate normals for each vertex 
@@ -296,29 +296,6 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3>& vertices, const
         }
     }
 }
-
-
-void generateSurface(std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals)
-{
-    // // Assuming lineSegments has at least two line segments
-    // for (size_t i = 0; i < surfaceVertices.size() - 1; i += 2)
-    // {
-    //     // calculate the normal for the line segments
-    //     glm::vec3 edge = surfaceVertices[i + 1] - surfaceVertices[i];
-    //     glm::vec3 normal(-edge.y, edge.x, 0.0f);
-    //     normal = glm::normalize(normal);
-
-    //     // push the same normal for both vertices
-    //     surfaceNormals.push_back(normal);
-    //     surfaceNormals.push_back(normal);
-    // }
-
-    //attempting to use calcTriangleStripNormal here
-    std::vector<unsigned int> indices(vertices.size());
-    std::iota(indices.begin(), indices.end(), 0);
-    calculateTriangleStripNormals(surfaceVertices,indices,surfaceNormals);
-}
-
 
 
 void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
@@ -508,7 +485,7 @@ void drawHarmonograph(float animationTime, bool renderSurface)
     // Draw line segments
     glDrawArrays(GL_LINE_STRIP, 0, vertices.size() / 3);
 
-    if (renderSurface)
+    if (renderSurface) // if user clicks extrude
     {
         std::vector<glm::vec3> controlPoints;
         for (size_t i = 0; i < vertices.size(); i += 3)
@@ -554,14 +531,13 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         // glPointSize(5.0f);
         // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
-        // generate surface vertices and normals and extrusions
+
+        // Generate flat surface vertice
         std::vector<glm::vec3> surfaceNormals(surfaceVertices.size());
-        // generateSurface(surfaceVertices, surfaceNormals);
         std::vector<unsigned int> indices(surfaceVertices.size());
         std::iota(indices.begin(), indices.end(), 0);
         calculateTriangleStripNormals(surfaceVertices,indices,surfaceNormals);
 
-        std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 
 
         // Extrude surface
@@ -571,34 +547,15 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
         extrudeSurface(surfaceVertices, surfaceNormals, extrusionDistance, extrudedVertices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
 
+        std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
+
+
         calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, frontSurfaceIndices, frontSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals);
         calculateTriangleStripNormals(extrudedVertices, sideSurface2Indices, sideSurface2Normals);
-
-        //combining all normals into allNormals - this is for obj export
-        std::vector<std::vector<glm::vec3>> allNormalsList = {
-            topSurfaceNormals, bottomSurfaceNormals, 
-            frontSurfaceNormals, endSurfaceNormals,
-            sideSurface1Normals, sideSurface2Normals
-        };
-
-        std::vector<glm::vec3> allNormals;
-
-        int currentIndex = 0;
-
-        constexpr int numGroups = 6;
-        int startingIndices[numGroups] = {0};
-        allNormals.clear();
-
-        for (int i = 0; i < numGroups; ++i) {
-            startingIndices[i] = currentIndex;
-            allNormals.insert(allNormals.end(), allNormalsList[i].begin(), allNormalsList[i].end());
-            currentIndex += allNormalsList[i].size();
-        }
-
 
 
         // Create and bind VAO and VBO for extruded surface
@@ -645,6 +602,28 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         glDeleteBuffers(1, &extrudedVBO);
         glDeleteBuffers(1, &topSurfaceIndexVBO);
         glDeleteBuffers(1, &bottomSurfaceIndexVBO);
+
+
+        //combining all normals into allNormals - this is for obj export
+        std::vector<std::vector<glm::vec3>> allNormalsList = {
+            topSurfaceNormals, bottomSurfaceNormals, 
+            frontSurfaceNormals, endSurfaceNormals,
+            sideSurface1Normals, sideSurface2Normals
+        };
+
+        std::vector<glm::vec3> allNormals;
+
+        int currentIndex = 0;
+
+        constexpr int numGroups = 6;
+        int startingIndices[numGroups] = {0};
+        allNormals.clear();
+
+        for (int i = 0; i < numGroups; ++i) {
+            startingIndices[i] = currentIndex;
+            allNormals.insert(allNormals.end(), allNormalsList[i].begin(), allNormalsList[i].end());
+            currentIndex += allNormalsList[i].size();
+        }
 
     }
 
