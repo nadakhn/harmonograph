@@ -265,13 +265,13 @@ std::vector<glm::vec3> calculateNormals(const std::vector<float> &vertices)
     return normals;
 }
 
-void calculateTriangleStripNormals(const std::vector<glm::vec3> &vertices, const std::vector<unsigned int> &indices, std::vector<glm::vec3> &normals)
+void calculateTriangleStripNormals(const std::vector<glm::vec3> &vertices, const std::vector<unsigned int> &indices, std::vector<glm::vec3> &normals, bool invertNormals = false)
 {
     normals.clear();
     normals.resize(vertices.size(), glm::vec3(0.0f));
 
     // Calculate normals for each triangle in the triangle strip
-    for (size_t i = 0; i < indices.size() - 3; ++i)
+    for (size_t i = 0; i < indices.size() - 2; ++i)
     {
         const glm::vec3 &v0 = vertices[indices[i]];
         const glm::vec3 &v1 = vertices[indices[i + 1]];
@@ -299,7 +299,16 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3> &vertices, const
         {
             normal = glm::normalize(normal);
         }
+
+        // Invert when necessary
+        if (invertNormals)
+        {
+            normal = -normal;
+        }
     }
+
+   
+
 }
 
 void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
@@ -325,13 +334,12 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<g
         extrudedVertices.push_back(bottomVertex);
     }
 
-    // create indices for the top + bottom surface, we get rid of last 4 indices due to normal abnormality
-    for (size_t i = 0; i < numVertices - 4; ++i)
+    for (size_t i = 0; i < numVertices; ++i)
     {
         topSurfaceIndices.push_back(i);
     }
 
-    for (size_t i = 0; i < numVertices - 4; ++i)
+    for (size_t i = 0; i < numVertices; ++i)
     {
         bottomSurfaceIndices.push_back(numVertices + i);
     }
@@ -342,18 +350,18 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<g
     frontSurfaceIndices.push_back(1);
     frontSurfaceIndices.push_back(numVertices + 1);
 
-    endSurfaceIndices.push_back(numVertices - 4 - 1);
-    endSurfaceIndices.push_back(2 * (numVertices)-1 - 4);
-    endSurfaceIndices.push_back(numVertices - 4 - 2);
-    endSurfaceIndices.push_back(2 * (numVertices)-2 - 4);
+    endSurfaceIndices.push_back(numVertices - 1);
+    endSurfaceIndices.push_back(2 * (numVertices)-1 );
+    endSurfaceIndices.push_back(numVertices - 2);
+    endSurfaceIndices.push_back(2 * (numVertices)-2 );
 
     // create indices for side faces
-    for (size_t i = 0; i < numVertices - 4; i += 2)
+    for (size_t i = 0; i < numVertices ; i += 2)
     {
         sideSurface1Indices.push_back(i);
         sideSurface1Indices.push_back(i + numVertices);
     }
-    for (size_t i = 1; i < numVertices - 4; i += 2)
+    for (size_t i = 1; i < numVertices ; i += 2)
     {
         sideSurface2Indices.push_back(i);
         sideSurface2Indices.push_back(i + numVertices);
@@ -364,7 +372,6 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<g
 ///                                       Export OBJ
 ///=========================================================================================///
 
-// nada note: this function is still a wip!
 void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::string &filename, std::vector<glm::vec3> allNormals, int startingIndices[],
                  std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
 {
@@ -387,23 +394,32 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
     // iterate over normals
     for (const auto &normal : allNormals)
     {
-        outputFile << "n " << normal.x << " " << normal.y << " " << normal.z << "\n";
+        outputFile << "vn " << normal.x << " " << normal.y << " " << normal.z << "\n";
     }
 
     auto exportFaces = [&outputFile](const std::vector<unsigned int> &surfaceIndices, int start)
     {
         // Iterate through each triangle strip
-        for (int i = 0; i < surfaceIndices.size() - 2 - 4; ++i)
-        { // - 4 bc we ignore the last 4 indices!!
-            // Determine vertex indices for the current face
-            int v1 = surfaceIndices[i];
-            int v2 = surfaceIndices[i + 1];
-            int v3 = surfaceIndices[i + 2];
-
+        for (int i = 0; i < surfaceIndices.size() - 2; ++i)
+        {
+            int v1, v2, v3;
+            if (i % 2 == 0) //this accounts for winding order
+            {
+                v1 = surfaceIndices[i] + 1;
+                v2 = surfaceIndices[i + 1] + 1;
+                v3 = surfaceIndices[i + 2] + 1;
+            }
+            else
+            {
+                v1 = surfaceIndices[i + 2] + 1;
+                v2 = surfaceIndices[i + 1] + 1;
+                v3 = surfaceIndices[i] + 1;
+            }
+            
             // determine normal indices for current face
-            int vn1 = start + i; // mapped to get starting indices for each surface, done below in main!
-            int vn2 = start + i + 1;
-            int vn3 = start + i + 2;
+            int vn1 = start + i + 1;
+            int vn2 = start + i + 2;
+            int vn3 = start + i + 3;
 
             // Export face with vertex indices
             outputFile << "f " << v1 << "//" << vn1 << " " << v2 << "//" << vn2 << " " << v3 << "//" << vn3 << "\n";
@@ -412,7 +428,7 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
 
     exportFaces(topSurfaceIndices, startingIndices[0]);
     exportFaces(bottomSurfaceIndices, startingIndices[1]);
-    exportFaces(frontSurfaceIndices, startingIndices[2]);
+    exportFaces(frontSurfaceIndices, startingIndices[2]); 
     exportFaces(endSurfaceIndices, startingIndices[3]);
     exportFaces(sideSurface1Indices, startingIndices[4]);
     exportFaces(sideSurface2Indices, startingIndices[5]);
@@ -489,11 +505,11 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
     if (renderSurface) // if user clicks extrude
     {
-        std::cout << "rendering";
-        std::vector<glm::vec3> controlPoints;
+        // std::cout << "rendering ";
+        std::vector<glm::vec3> lineVertices;
         for (size_t i = 0; i < vertices.size(); i += 3)
         {
-            controlPoints.push_back(glm::vec3(vertices[i], vertices[i + 1], vertices[i + 2]));
+            lineVertices.push_back(glm::vec3(vertices[i], vertices[i + 1], vertices[i + 2]));
         }
 
         // Calculate + render normals
@@ -516,11 +532,13 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         // Draw the normal vectors
         // Calculate vertices for line segments (control points to normals)
         std::vector<glm::vec3> surfaceVertices; // to store vertices of point x on line, normal of said point, point x+1 on line (cont)
-        for (size_t i = 0; i < controlPoints.size(); ++i)
+        for (size_t i = 0; i < lineVertices.size() - 4; ++i)
         {
-            surfaceVertices.push_back(controlPoints[i]);
-            surfaceVertices.push_back(controlPoints[i] + 0.5f * normals[i]); // nada TODO: change the length of the normal in relation to the input amp
+            surfaceVertices.push_back(lineVertices[i]);
+            surfaceVertices.push_back(lineVertices[i] + 0.5f * normals[i]); // TODO: change the length of the normal in relation to the input amp
         }
+
+
 
         // Store surface vertices' data in VBO
         glBufferData(GL_ARRAY_BUFFER, surfaceVertices.size() * sizeof(glm::vec3), &surfaceVertices[0], GL_STATIC_DRAW);
@@ -549,11 +567,11 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
         std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 
-        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals, true); //TODO: check if this last param does anything 
         calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, frontSurfaceIndices, frontSurfaceNormals);
-        calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals);
-        calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals);
+        calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals );
+        calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals );
         calculateTriangleStripNormals(extrudedVertices, sideSurface2Indices, sideSurface2Normals);
 
         // Create and bind VAO and VBO for extruded surface
@@ -591,8 +609,8 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         drawSurface(bottomSurfaceIndexVBO, bottomSurfaceNormalsVBO, bottomSurfaceIndices, bottomSurfaceIndices.size());
         drawSurface(frontSurfaceIndexVBO, frontSurfaceNormalsVBO, frontSurfaceIndices, frontSurfaceIndices.size());
         drawSurface(endSurfaceIndexVBO, endSurfaceNormalsVBO, endSurfaceIndices, endSurfaceIndices.size());
-        drawSurface(sideSurface1IndexVBO, sideSurface1NormalsVBO, sideSurface1Indices, sideSurface1Indices.size()); // inside
-        drawSurface(sideSurface2IndexVBO, sideSurface2NormalsVBO, sideSurface2Indices, sideSurface2Indices.size()); // outsude
+        drawSurface(sideSurface1IndexVBO, sideSurface1NormalsVBO, sideSurface1Indices, sideSurface1Indices.size());
+        drawSurface(sideSurface2IndexVBO, sideSurface2NormalsVBO, sideSurface2Indices, sideSurface2Indices.size());
 
         // Cleanup after rendering the extruded surface
         glDeleteVertexArrays(1, &extrudedVAO);
@@ -624,8 +642,8 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
         if (isExported)
         {
-            std::cout << "Exporting";
-            exportToObj(extrudedVertices, "exportFile", allNormals, startingIndices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
+            // std::cout << "exporting";
+            exportToObj(extrudedVertices, "harmonograph_object.obj", allNormals, startingIndices, topSurfaceIndices, bottomSurfaceIndices, frontSurfaceIndices, endSurfaceIndices, sideSurface1Indices, sideSurface2Indices);
             isExported = false;
         }
     }
