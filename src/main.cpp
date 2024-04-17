@@ -156,6 +156,125 @@ void SetMeshColor()
     meshColorID2 = (meshColorID2 + 1) % 3;
 }
 
+void SetPresets(int id)
+{
+    switch (id)
+    {
+    // Flower
+    case 0:
+        freqPtr1[0] = 3.001f;
+        freqPtr1[1] = 2.0f;
+        freqPtr1[2] = 3.0f;
+
+        freqPtr2[0] = 2.0f;
+        freqPtr2[1] = 3.0f;
+        freqPtr2[2] = 2.0f;
+
+        dampPtr1[0] = 0.004f;
+        dampPtr1[1] = 0.0065f;
+        dampPtr1[2] = 0.008f;
+
+        dampPtr2[0] = 0.019f;
+        dampPtr2[1] = 0.012f;
+        dampPtr2[2] = 0.005f;
+
+        phasePtr1[0] = 0;
+        phasePtr1[1] = 0;
+        phasePtr1[2] = M_PI / 2;
+
+        phasePtr2[0] = 3 * M_PI / 2;
+        phasePtr2[1] = M_PI / 4;
+        phasePtr2[2] = 2 * M_PI;
+        break;
+    // dian
+    case 1:
+        amplitude = 0.5f;
+
+        freqPtr1[0] = 3.001f;
+        freqPtr1[1] = 1.0f;
+        freqPtr1[2] = 3.0f;
+
+        freqPtr2[0] = 1.0f;
+        freqPtr2[1] = 3.0f;
+        freqPtr2[2] = 1.0f;
+
+        dampPtr1[0] = 0.004f;
+        dampPtr1[1] = 0.005f;
+        dampPtr1[2] = 0.004f;
+
+        dampPtr2[0] = 0.01f;
+        dampPtr2[1] = 0.012f;
+        dampPtr2[2] = 0.005f;
+
+        phasePtr1[0] = 0;
+        phasePtr1[1] = 0;
+        phasePtr1[2] = M_PI / 2;
+
+        phasePtr2[0] = 3 * M_PI / 2;
+        phasePtr2[1] = M_PI / 4;
+        phasePtr2[2] = 2 * M_PI;
+        break;
+    // ryans
+    case 2:
+        amplitude = 0.5f;
+
+        freqPtr1[0] = 3.001f;
+        freqPtr1[1] = 1.0f;
+        freqPtr1[2] = 1.0f;
+
+        freqPtr2[0] = 3.0f;
+        freqPtr2[1] = 2.0f;
+        freqPtr2[2] = 1.0f;
+
+        dampPtr1[0] = 0.00f;
+        dampPtr1[1] = 0.00f;
+        dampPtr1[2] = 0.00f;
+
+        dampPtr2[0] = 0.0f;
+        dampPtr2[1] = 0.0f;
+        dampPtr2[2] = 0.0f;
+
+        phasePtr1[0] = 0;
+        phasePtr1[1] = M_PI / 2;
+        phasePtr1[2] = 0;
+
+        phasePtr2[0] = M_PI / 2;
+        phasePtr2[1] = 0;
+        phasePtr2[2] = 0;
+        break;
+    // nadas
+    case 3:
+        amplitude = 0.5f;
+
+        freqPtr1[0] = 4.00f;
+        freqPtr1[1] = 4.00;
+        freqPtr1[2] = 4.00f;
+
+        freqPtr2[0] = 4.00f;
+        freqPtr2[1] = 4.00f;
+        freqPtr2[2] = 4.00f;
+
+        dampPtr1[0] = 0.03f;
+        dampPtr1[1] = 0.01f;
+        dampPtr1[2] = 0.3f;
+
+        dampPtr2[0] = 0.01f;
+        dampPtr2[1] = 0.3f;
+        dampPtr2[2] = 0.1f;
+
+        phasePtr1[0] = 1.88;
+        phasePtr1[1] = 2.61;
+        phasePtr1[2] = 0.35;
+
+        phasePtr2[0] = 4.02;
+        phasePtr2[1] = 1.88;
+        phasePtr2[2] = 2.61;
+        break;
+    default:
+        break;
+    }
+}
+
 ///=========================================================================================///
 ///                                    Callback Functions
 ///=========================================================================================///
@@ -926,15 +1045,24 @@ int main(void)
             isAnimating = !isAnimating;
         }
         ImGui::SameLine();
-        ImGui::Button("Preset 1");
-        ImGui::SameLine();
-        ImGui::Button("Preset 2");
-        ImGui::SameLine();
-        ImGui::Button("Preset 3");
-        ImGui::SameLine();
+
         if (ImGui::Button("Export"))
         {
             isExported = true;
+        }
+        if (ImGui::Button("Preset 1"))
+        {
+            SetPresets(0);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Preset 2"))
+        {
+            SetPresets(1);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Preset 3"))
+        {
+            SetPresets(3);
         }
         ImGui::End();
 
