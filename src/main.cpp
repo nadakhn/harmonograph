@@ -32,7 +32,7 @@ using namespace std;
 // declaration
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-// void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos);
@@ -55,8 +55,35 @@ float prevMouseX;
 float prevMouseY;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
 
+
 // Colour
-glm::vec3 meshColor;
+int lightColorID = 0;
+int meshColorID1 = 0;
+int meshColorID2 = 0;
+// Note: Colors have to be readjusted to achieve the gradients in the palette (not exact RGB)
+
+// Light color table
+glm::vec3 lightColorTable[3] =
+{
+   glm::vec3(0.8745, 0.749, 0.549),
+   glm::vec3(0.749, 0.721, 0.596),
+   glm::vec3(0.796, 0.678, 0.581)
+};
+
+// Mesh color table
+glm::vec3 meshColorTable1[3] =
+{
+    glm::vec3(0.87, 0.7, 0.49), 
+    glm::vec3(0.368, 0.357, 0.349),
+    glm::vec3(0.76, 0.678, 0.581)
+};
+
+glm::vec3 meshColorTable2[3] =
+{
+    glm::vec3(0.511, 0.364, 0.43),
+    glm::vec3(0.267, 0.556, 0.552),
+    glm::vec3(0.532, 0.38, 0.398)
+};
 
 // Animation Control
 bool isAnimating = true;
@@ -123,6 +150,14 @@ void ScaleModel(float scale)
     scaleMatrix = glm::translate(scaleMatrix, -scaleCenter);
 
     modelMatrix = scaleMatrix * modelMatrix;
+}
+
+void SetMeshColor(int& lightColorID, int& meshColorID1, int& meshColorID2)
+{
+    // Increment color IDs (cycle between 0-2)
+    lightColorID = (lightColorID + 1) % 3;
+    meshColorID1 = (meshColorID1 + 1) % 3;
+    meshColorID2 = (meshColorID2 + 1) % 3;
 }
 
 ///=========================================================================================///
@@ -232,6 +267,17 @@ void cursor_pos_callback(GLFWwindow *window, double mouseX, double mouseY)
     else
     {
         isFirstMouse = true;
+    }
+}
+
+// glfw: whenever a key is pressed, this callback is called
+// ----------------------------------------------------------------------
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    {
+        SetMeshColor(lightColorID, meshColorID1, meshColorID2);
+
     }
 }
 
@@ -695,6 +741,7 @@ int main(void)
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // correct resize
     glfwSetScrollCallback(window, scroll_callback);                    // scale
     glfwSetCursorPosCallback(window, cursor_pos_callback);             // translate OR rotate
+    glfwSetKeyCallback(window, key_callback);                          // change color
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     // tell GLFW to capture the mouse
@@ -771,7 +818,9 @@ int main(void)
     int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     int modelLoc = glGetUniformLocation(shaderProgram, "model");
-    int meshColorLoc = glGetUniformLocation(shaderProgram, "meshColor");
+    int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
+    int meshColorLoc1 = glGetUniformLocation(shaderProgram, "meshColor1");
+    int meshColorLoc2 = glGetUniformLocation(shaderProgram, "meshColor2");
     int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
 
     unsigned int VBO, VAO;
@@ -907,7 +956,9 @@ int main(void)
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
+        glUniform3fv(lightColorLoc, 1, &lightColorTable[lightColorID][0]);
+        glUniform3fv(meshColorLoc1, 1, &meshColorTable1[meshColorID1][0]);
+        glUniform3fv(meshColorLoc2, 1, &meshColorTable2[meshColorID2][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
         drawHarmonograph(animationTime, !isAnimating);
