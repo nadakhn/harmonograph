@@ -244,7 +244,7 @@ void SetPresets(int id)
         break;
     // nadas
     case 3:
-        amplitude = 0.5f;
+        amplitude = 1.03f;
 
         freqPtr1[0] = 4.00f;
         freqPtr1[1] = 4.00;
@@ -970,12 +970,18 @@ int main(void)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Initializer Frequncy
+    // X1
     freqPtr1[0] = 3.001f;
+    // x2
     freqPtr1[1] = 2.0f;
+    // y1
     freqPtr1[2] = 3.0f;
 
+    // y2
     freqPtr2[0] = 2.0f;
+    // z1
     freqPtr2[1] = 3.0f;
+    // z2
     freqPtr2[2] = 2.0f;
 
     dampPtr1[0] = 0.004f;
