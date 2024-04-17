@@ -403,23 +403,30 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
         for (int i = 0; i < surfaceIndices.size() - 2; ++i)
         {
             int v1, v2, v3;
+            int vn1, vn2, vn3;
             if (i % 2 == 0) //this accounts for winding order
             {
                 v1 = surfaceIndices[i] + 1;
                 v2 = surfaceIndices[i + 1] + 1;
                 v3 = surfaceIndices[i + 2] + 1;
+
+                // determine normal indices for current face
+                vn1 = start + i + 1;
+                vn2 = start + i + 2;
+                vn3 = start + i + 3;
             }
             else
             {
                 v1 = surfaceIndices[i + 2] + 1;
                 v2 = surfaceIndices[i + 1] + 1;
                 v3 = surfaceIndices[i] + 1;
+
+                // determine normal indices for current face
+                vn1 = start + i + 3;
+                vn2 = start + i + 2;
+                vn3 = start + i + 1;
             }
             
-            // determine normal indices for current face
-            int vn1 = start + i + 1;
-            int vn2 = start + i + 2;
-            int vn3 = start + i + 3;
 
             // Export face with vertex indices
             outputFile << "f " << v1 << "//" << vn1 << " " << v2 << "//" << vn2 << " " << v3 << "//" << vn3 << "\n";
