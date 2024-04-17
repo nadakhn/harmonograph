@@ -32,7 +32,7 @@ using namespace std;
 // declaration
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-// void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos);
@@ -56,7 +56,30 @@ float prevMouseY;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
 
 // Colour
-glm::vec3 meshColor;
+int lightColorID = 0;
+int meshColorID1 = 0;
+int meshColorID2 = 0;
+// Note: Colors have to be readjusted to achieve the gradients in the palette (not exact RGB)
+
+// Light color table
+glm::vec3 lightColorTable[3] =
+    {
+        glm::vec3(0.8745, 0.749, 0.549),
+        glm::vec3(0.749, 0.721, 0.596),
+        glm::vec3(0.796, 0.678, 0.581)};
+
+// Mesh color table
+glm::vec3 meshColorTable1[3] =
+    {
+        glm::vec3(0.87, 0.7, 0.49),
+        glm::vec3(0.368, 0.357, 0.349),
+        glm::vec3(0.76, 0.678, 0.581)};
+
+glm::vec3 meshColorTable2[3] =
+    {
+        glm::vec3(0.511, 0.364, 0.43),
+        glm::vec3(0.267, 0.556, 0.552),
+        glm::vec3(0.532, 0.38, 0.398)};
 
 // Animation Control
 bool isAnimating = true;
@@ -123,6 +146,14 @@ void ScaleModel(float scale)
     scaleMatrix = glm::translate(scaleMatrix, -scaleCenter);
 
     modelMatrix = scaleMatrix * modelMatrix;
+}
+
+void SetMeshColor()
+{
+    // Increment color IDs (cycle between 0-2)
+    lightColorID = (lightColorID + 1) % 3;
+    meshColorID1 = (meshColorID1 + 1) % 3;
+    meshColorID2 = (meshColorID2 + 1) % 3;
 }
 
 ///=========================================================================================///
@@ -235,6 +266,16 @@ void cursor_pos_callback(GLFWwindow *window, double mouseX, double mouseY)
     }
 }
 
+// glfw: whenever a key is pressed, this callback is called
+// ----------------------------------------------------------------------
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    {
+        SetMeshColor();
+    }
+}
+
 ///=========================================================================================///
 ///                          Vertex Normals + Surfaces + Extrusions
 ///=========================================================================================///
@@ -306,9 +347,6 @@ void calculateTriangleStripNormals(const std::vector<glm::vec3> &vertices, const
             normal = -normal;
         }
     }
-
-   
-
 }
 
 void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<glm::vec3> &surfaceNormals, float extrusionDistance, std::vector<glm::vec3> &extrudedVertices, std::vector<unsigned int> &topSurfaceIndices, std::vector<unsigned int> &bottomSurfaceIndices, std::vector<unsigned int> &frontSurfaceIndices, std::vector<unsigned int> &endSurfaceIndices, std::vector<unsigned int> &sideSurface1Indices, std::vector<unsigned int> &sideSurface2Indices)
@@ -351,17 +389,17 @@ void extrudeSurface(const std::vector<glm::vec3> &surfaceVertices, std::vector<g
     frontSurfaceIndices.push_back(numVertices + 1);
 
     endSurfaceIndices.push_back(numVertices - 1);
-    endSurfaceIndices.push_back(2 * (numVertices)-1 );
+    endSurfaceIndices.push_back(2 * (numVertices)-1);
     endSurfaceIndices.push_back(numVertices - 2);
-    endSurfaceIndices.push_back(2 * (numVertices)-2 );
+    endSurfaceIndices.push_back(2 * (numVertices)-2);
 
     // create indices for side faces
-    for (size_t i = 0; i < numVertices ; i += 2)
+    for (size_t i = 0; i < numVertices; i += 2)
     {
         sideSurface1Indices.push_back(i);
         sideSurface1Indices.push_back(i + numVertices);
     }
-    for (size_t i = 1; i < numVertices ; i += 2)
+    for (size_t i = 1; i < numVertices; i += 2)
     {
         sideSurface2Indices.push_back(i);
         sideSurface2Indices.push_back(i + numVertices);
@@ -404,7 +442,7 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
         {
             int v1, v2, v3;
             int vn1, vn2, vn3;
-            if (i % 2 == 0) //this accounts for winding order
+            if (i % 2 == 0) // this accounts for winding order
             {
                 v1 = surfaceIndices[i] + 1;
                 v2 = surfaceIndices[i + 1] + 1;
@@ -426,7 +464,6 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
                 vn2 = start + i + 2;
                 vn3 = start + i + 1;
             }
-            
 
             // Export face with vertex indices
             outputFile << "f " << v1 << "//" << vn1 << " " << v2 << "//" << vn2 << " " << v3 << "//" << vn3 << "\n";
@@ -435,7 +472,7 @@ void exportToObj(const std::vector<glm::vec3> &extrudedVertices, const std::stri
 
     exportFaces(topSurfaceIndices, startingIndices[0]);
     exportFaces(bottomSurfaceIndices, startingIndices[1]);
-    exportFaces(frontSurfaceIndices, startingIndices[2]); 
+    exportFaces(frontSurfaceIndices, startingIndices[2]);
     exportFaces(endSurfaceIndices, startingIndices[3]);
     exportFaces(sideSurface1Indices, startingIndices[4]);
     exportFaces(sideSurface2Indices, startingIndices[5]);
@@ -545,8 +582,6 @@ void drawHarmonograph(float animationTime, bool renderSurface)
             surfaceVertices.push_back(lineVertices[i] + 0.5f * normals[i]); // TODO: change the length of the normal in relation to the input amp
         }
 
-
-
         // Store surface vertices' data in VBO
         glBufferData(GL_ARRAY_BUFFER, surfaceVertices.size() * sizeof(glm::vec3), &surfaceVertices[0], GL_STATIC_DRAW);
 
@@ -574,11 +609,11 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
         std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 
-        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals, true); //TODO: check if this last param does anything 
+        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals, true); // TODO: check if this last param does anything
         calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, frontSurfaceIndices, frontSurfaceNormals);
-        calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals );
-        calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals );
+        calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals);
+        calculateTriangleStripNormals(extrudedVertices, sideSurface1Indices, sideSurface1Normals);
         calculateTriangleStripNormals(extrudedVertices, sideSurface2Indices, sideSurface2Normals);
 
         // Create and bind VAO and VBO for extruded surface
@@ -646,7 +681,6 @@ void drawHarmonograph(float animationTime, bool renderSurface)
             currentIndex += allNormalsList[i].size();
         }
 
-
         if (isExported)
         {
             // std::cout << "exporting";
@@ -695,6 +729,7 @@ int main(void)
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // correct resize
     glfwSetScrollCallback(window, scroll_callback);                    // scale
     glfwSetCursorPosCallback(window, cursor_pos_callback);             // translate OR rotate
+    glfwSetKeyCallback(window, key_callback);                          // change color
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     // tell GLFW to capture the mouse
@@ -771,7 +806,9 @@ int main(void)
     int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
     int viewLoc = glGetUniformLocation(shaderProgram, "view");
     int modelLoc = glGetUniformLocation(shaderProgram, "model");
-    int meshColorLoc = glGetUniformLocation(shaderProgram, "meshColor");
+    int lightColorLoc = glGetUniformLocation(shaderProgram, "lightColor");
+    int meshColorLoc1 = glGetUniformLocation(shaderProgram, "meshColor1");
+    int meshColorLoc2 = glGetUniformLocation(shaderProgram, "meshColor2");
     int viewPosLoc = glGetUniformLocation(shaderProgram, "viewPos");
 
     unsigned int VBO, VAO;
@@ -879,6 +916,11 @@ int main(void)
             isAnimating = true;
         }
         ImGui::SameLine();
+        if (ImGui::Button("Change Colour"))
+        {
+            SetMeshColor();
+        }
+        ImGui::SameLine();
         if (ImGui::Button("Extrude"))
         {
             isAnimating = !isAnimating;
@@ -907,7 +949,9 @@ int main(void)
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, &projection[0][0]);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniform3fv(meshColorLoc, 1, &colorTable[0][0]);
+        glUniform3fv(lightColorLoc, 1, &lightColorTable[lightColorID][0]);
+        glUniform3fv(meshColorLoc1, 1, &meshColorTable1[meshColorID1][0]);
+        glUniform3fv(meshColorLoc2, 1, &meshColorTable2[meshColorID2][0]);
         glUniform3fv(viewPosLoc, 1, &camera_position[0]);
 
         drawHarmonograph(animationTime, !isAnimating);
