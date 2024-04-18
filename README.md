@@ -1,15 +1,11 @@
-hello this is the silly mac version
-
+Interactive Harmonograph Project for Graphics & Visualisation
 
 how to run:
-1. go to /Harmonograph/build
-2. cmake ..
-3. make
-4. ./Harmonograph
+1. mkdir build
+2.  go to /Harmonograph/build
+3. cmake ..
+4. make
+5. ./Harmonograph
 
 
-current status:
-- animate the harmonograph with static values
-- included the shaders to allow for transformations (zoom, rotate)
-- [TODO] UI buttons for user inputs of harmonograph params
-- [TODO] extrusions ! 
+thanks!

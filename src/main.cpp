@@ -10,7 +10,6 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-// #include "shader.h" #TODO: dian to move this back to a seperate file
 #include "shaderSource.h"
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
@@ -85,7 +84,6 @@ glm::vec3 meshColorTable2[3] =
 bool isAnimating = true;
 bool isExported = false;
 float animationTime = 0.0f;
-bool exportNow = false; // nada todo: idk where this should go
 
 // Parameters
 float amplitude = 0.5f;
@@ -160,7 +158,6 @@ void SetPresets(int id)
 {
     switch (id)
     {
-    // Flower
     case 0:
         freqPtr1[0] = 3.001f;
         freqPtr1[1] = 2.0f;
@@ -186,7 +183,6 @@ void SetPresets(int id)
         phasePtr2[1] = M_PI / 4;
         phasePtr2[2] = 2 * M_PI;
         break;
-    // dian
     case 1:
         amplitude = 0.5f;
 
@@ -214,7 +210,6 @@ void SetPresets(int id)
         phasePtr2[1] = M_PI / 4;
         phasePtr2[2] = 2 * M_PI;
         break;
-    // ryans
     case 2:
         amplitude = 0.5f;
 
@@ -242,7 +237,6 @@ void SetPresets(int id)
         phasePtr2[1] = 0;
         phasePtr2[2] = 0;
         break;
-    // nadas
     case 3:
         amplitude = 1.03f;
 
@@ -698,7 +692,7 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         for (size_t i = 0; i < lineVertices.size() - 4; ++i)
         {
             surfaceVertices.push_back(lineVertices[i]);
-            surfaceVertices.push_back(lineVertices[i] + 0.5f * normals[i]); // TODO: change the length of the normal in relation to the input amp
+            surfaceVertices.push_back(lineVertices[i] + 0.5f * normals[i]);
         }
 
         // Store surface vertices' data in VBO
@@ -709,7 +703,7 @@ void drawHarmonograph(float animationTime, bool renderSurface)
         glEnableVertexAttribArray(0);
 
         // -- uncomment the 3 lines belw if you want to draw the line normals
-        // glDrawArrays(GL_LINES, 0, lineSegments.size());
+        // glDrawArrays(GL_LINES, 0, surfaceVertices.size());
         // glPointSize(5.0f);
         // glDrawArrays(GL_POINTS, 0, normals.size() * 2); // this draws out the normal end points
 
@@ -728,7 +722,7 @@ void drawHarmonograph(float animationTime, bool renderSurface)
 
         std::vector<glm::vec3> topSurfaceNormals, bottomSurfaceNormals, frontSurfaceNormals, endSurfaceNormals, sideSurface1Normals, sideSurface2Normals;
 
-        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals, true); // TODO: check if this last param does anything
+        calculateTriangleStripNormals(extrudedVertices, topSurfaceIndices, topSurfaceNormals, true);
         calculateTriangleStripNormals(extrudedVertices, bottomSurfaceIndices, bottomSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, frontSurfaceIndices, frontSurfaceNormals);
         calculateTriangleStripNormals(extrudedVertices, endSurfaceIndices, endSurfaceNormals);
@@ -1035,7 +1029,6 @@ int main(void)
         ImGui::SameLine();
         if (ImGui::Button("Reset"))
         {
-            exportNow = true; // nada temp add a flag here to run export object
             animationTime = 0;
             freeze = 1;
             isAnimating = true;
